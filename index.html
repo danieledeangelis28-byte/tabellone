@@ -2130,8 +2130,8 @@
                             const winScore = hasScores ? ((partita.vincitore === partita.p1) ? partita.scoreP1 : partita.scoreP2) : null;
                             const loseScore = hasScores ? ((partita.vincitore === partita.p1) ? partita.scoreP2 : partita.scoreP1) : null;
 
-                            let metaWinner = `<span class="meta-badge outcome-win">Vince</span>`;
-                            let metaLoser = `<span class="meta-badge outcome-loss">Sconfitto</span>`;
+                            let metaWinner = `<span class="meta-badge outcome-win">Vittoria </span>`;
+                            let metaLoser = `<span class="meta-badge outcome-loss">Sconfitta</span>`;
                             if (hasPuntiRimasti) {
                                 const rimasti = (partita.puntiPerdente !== undefined && partita.puntiPerdente !== null) ? partita.puntiPerdente : 0;
                                 metaLoser += `<span class="meta-badge stat-rimasti">Punti rimasti: <strong>${rimasti}</strong></span>`;
