@@ -225,7 +225,7 @@
 
         /* Form e Input */
         .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
-        input[type="text"], input[type="number"], input[type="password"], select {
+        input[type="text"], input[type="number"], input[type="password"], input[type="datetime-local"], select {
             flex-grow: 1;
             padding: 11px 14px;
             font-family: var(--font-body);
@@ -574,20 +574,44 @@
         .ranking-table tbody tr:last-child td { border-bottom: none; }
         .ranking-table tbody tr:hover td { background-color: #f8fafc; }
 
-        .matches-history { max-height: 250px; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 10px; }
+        .matches-history { max-height: 250px; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 14px; }
         
+        /* Layout partite a gironi "Sports Scorecard" con Tab Data/Ora */
         .match-card-modern {
             background: white;
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 8px;
+            padding: 24px 8px 8px 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-shadow: var(--shadow-sm);
             transition: all 0.18s ease;
+            position: relative;
         }
         .match-card-modern:hover { border-color: #94a3b8; box-shadow: var(--shadow-md); }
+
+        .match-date-tab {
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f8fafc;
+            border-top-left-radius: 7px;
+            border-bottom-right-radius: 6px;
+            padding: 2px 9px;
+            font-family: var(--font-display);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+            z-index: 2;
+        }
+
         .match-competitors {
             display: flex;
             flex-direction: column;
@@ -798,7 +822,6 @@
         <h1>Gestione Tornei</h1>
         <p style="color: var(--text-muted); margin-top: -6px; margin-bottom: 20px;">Scegli un'opzione per iniziare:</p>
         
-        <!-- Pulsante Nuovo Torneo: se visualizzatore, chiederà il PIN prima di creare -->
         <button class="btn" onclick="chiediNuovoTorneo()">➕ Nuovo Torneo</button>
         <button class="btn btn-secondary" onclick="toggleTorneiSalvati()">📂 Apri Torneo</button>
 
@@ -831,7 +854,7 @@
         <div class="form-section">
             <label for="modalita-torneo">Modalità del Torneo:</label>
             <select id="modalita-torneo" onchange="gestisciCambioModalita()">
-                <option value="diretta">Eliminazione Diretta (richiede n° pari)</option>
+                <option value="diretta">Eliminazione Diretta</option>
                 <option value="gironi">Solo Gironi</option>
                 <option value="mista">Mista (Gironi + Eliminazione Diretta)</option>
             </select>
@@ -855,13 +878,13 @@
                     <input type="checkbox" id="conta-punti-rimasti" onchange="gestisciToggleOpzioniGironi(); salvaImpostazioni();" style="width: 18px; height: 18px; cursor: pointer; margin: 0;">
                     <span>Conta i punti rimasti al perdente</span>
                 </label>
-                <span class="field-hint" style="margin-left: 28px; margin-top: -6px; margin-bottom: 10px;">Richiede i punti rimasti a fine partita (es. biliardo, freccette).</span>
+                <span class="field-hint" style="margin-left: 28px; margin-top: -6px; margin-bottom: 10px;">Registra i punti rimasti a fine partita (es. biliardo, freccette).</span>
 
                 <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; margin: 0;">
                     <input type="checkbox" id="segna-punti-fatti" onchange="gestisciToggleOpzioniGironi(); salvaImpostazioni();" style="width: 18px; height: 18px; cursor: pointer; margin: 0;">
                     <span>Segna punti fatti (punteggio partita)</span>
                 </label>
-                <span class="field-hint" style="margin-left: 28px;">Consente di registrare i punti segnati da entrambi i giocatori.</span>
+                <span class="field-hint" style="margin-left: 28px;">Registra i punti segnati da entrambi i giocatori.</span>
             </div>
 
             <!-- Criterio Parimerito -->
@@ -983,6 +1006,16 @@
     <div id="match-modal" class="modal-overlay">
         <div class="modal-box" style="text-align: left;">
             <h3 id="match-modal-title" style="text-align: center; margin-top: 0;">Registra Partita</h3>
+            
+            <!-- Banner Data e Ora Incontro Preimpostato e Modificabile -->
+            <div id="box-match-datetime" style="margin-top: 12px; margin-bottom: 8px; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); border-left: 4px solid var(--primary);">
+                <label for="match-datetime" style="font-family: var(--font-display); font-weight: 800; font-size: 13px; text-transform: uppercase; color: var(--navy-surface); display: flex; align-items: center; gap: 6px; margin: 0 0 6px 0; letter-spacing: 0.04em;">
+                    📅 Data e Ora Incontro:
+                </label>
+                <input type="datetime-local" id="match-datetime" style="padding: 8px 10px; font-size: 14px;">
+                <span class="field-hint" style="margin-top: 4px;">Preimpostata a ora attuale, modificabile a piacere.</span>
+            </div>
+
             <label style="font-weight: 600; font-size: 13px; display: block; margin-top: 10px;">Partecipante 1:</label>
             <select id="match-p1" onchange="aggiornaOpzioniVincitore()"></select>
             <label style="font-weight: 600; font-size: 13px; display: block; margin-top: 10px;">Partecipante 2:</label>
@@ -1121,7 +1154,6 @@
                     }
 
                     if (datiServer && typeof datiServer === 'object') {
-                        // Garantisce l'integrità dei campi array
                         for (const k in datiServer) {
                             if (datiServer[k]) {
                                 if (!Array.isArray(datiServer[k].partecipanti)) datiServer[k].partecipanti = [];
@@ -1251,7 +1283,6 @@
                 data = {};
             }
             if (typeof data !== 'object' || data === null) data = {};
-            // Protezione integrata contro campi undefined
             for (const id in data) {
                 if (data[id]) {
                     if (!Array.isArray(data[id].partecipanti)) data[id].partecipanti = [];
@@ -1262,10 +1293,8 @@
         }
 
         function salvaTornei(dati) { 
-            // 1. Salva subito in locale
             localStorage.setItem(STORAGE_KEY, JSON.stringify(dati));
 
-            // 2. Sincronizza nel cloud come JSON string
             if (isAdmin && torneiDbRef) {
                 try {
                     const jsonString = JSON.stringify(dati);
@@ -2073,6 +2102,7 @@
                         const isDraw = partita.isPareggio || partita.vincitore === '__DRAW__';
                         const hasScores = (partita.scoreP1 !== null && partita.scoreP1 !== undefined && partita.scoreP2 !== null && partita.scoreP2 !== undefined);
                         const showScores = hasPuntiFatti && hasScores;
+                        const dateBadge = partita.data ? `<span class="match-date-tab">📅 ${partita.data}</span>` : '';
 
                         if (isDraw) {
                             let metaP1 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
@@ -2080,6 +2110,7 @@
 
                             html += `
                                 <div class="match-card-modern">
+                                    ${dateBadge}
                                     <div class="match-competitors ${showScores ? 'has-scores' : ''}">
                                         <div class="competitor" style="background-color: #fffbeb; border-left: 4px solid #f59e0b;">
                                             <span class="name">🤝 ${partita.p1}</span>
@@ -2108,6 +2139,7 @@
 
                             html += `
                                 <div class="match-card-modern">
+                                    ${dateBadge}
                                     <div class="match-competitors ${showScores ? 'has-scores' : ''}">
                                         <div class="competitor winner">
                                             <span class="name">🏆 ${partita.vincitore}</span>
@@ -2148,6 +2180,20 @@
 
             document.getElementById('match-modal-title').textContent = `Registra Partita - ${gruppo.nome}`;
             
+            // Preimposta la data e l'ora attuali nel banner
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const localIso = `${year}-${month}-${day}T${hours}:${minutes}`;
+            
+            const dtInput = document.getElementById('match-datetime');
+            if (dtInput) {
+                dtInput.value = localIso;
+            }
+
             const p1Select = document.getElementById('match-p1');
             const p2Select = document.getElementById('match-p2');
             p1Select.innerHTML = '';
@@ -2309,6 +2355,27 @@
             const torneo = tornei[idTorneoAttuale];
             const gruppo = torneo.gironiData.gruppi[gironeAttivoIndex];
 
+            // Lettura e formattazione data/ora dal banner
+            const dtInputVal = document.getElementById('match-datetime') ? document.getElementById('match-datetime').value : '';
+            let dataString = '';
+            if (dtInputVal) {
+                const [dPart, tPart] = dtInputVal.split('T');
+                if (dPart && tPart) {
+                    const [y, m, d] = dPart.split('-');
+                    dataString = `${d}/${m}/${y} ${tPart}`;
+                } else {
+                    dataString = dtInputVal;
+                }
+            } else {
+                const now = new Date();
+                const d = String(now.getDate()).padStart(2, '0');
+                const m = String(now.getMonth() + 1).padStart(2, '0');
+                const y = now.getFullYear();
+                const h = String(now.getHours()).padStart(2, '0');
+                const min = String(now.getMinutes()).padStart(2, '0');
+                dataString = `${d}/${m}/${y} ${h}:${min}`;
+            }
+
             let scoreP1 = null;
             let scoreP2 = null;
             let esito = null;
@@ -2376,7 +2443,7 @@
                 puntiPerdente: puntiPerdente,
                 scoreP1: scoreP1,
                 scoreP2: scoreP2,
-                data: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+                data: dataString
             });
 
             const statsDopo = { ...statsPrima };
@@ -2977,7 +3044,7 @@
                 onConfirm: (ok) => {
                     if (ok) {
                         const tornei = getTornei();
-                        const torneo = tornei[idTorneoAttuale];
+                        torneo = tornei[idTorneoAttuale];
                         torneo.eliminazione.turni.forEach(t => {
                             t.incontri.forEach(m => { m.p1 = null; m.p2 = null; m.vincitore = null; });
                         });
