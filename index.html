@@ -111,7 +111,7 @@
         .view { display: none; }
         .view.active { display: block; }
 
-        /* Barra di Stato Utente: TV Lower Third / Status Bar */
+        /* Barra di Stato Utente */
         .role-bar {
             display: flex;
             justify-content: space-between;
@@ -798,7 +798,8 @@
         <h1>Gestione Tornei</h1>
         <p style="color: var(--text-muted); margin-top: -6px; margin-bottom: 20px;">Scegli un'opzione per iniziare:</p>
         
-        <button class="btn admin-only" onclick="chiediNuovoTorneo()">➕ Nuovo Torneo</button>
+        <!-- Pulsante Nuovo Torneo: se visualizzatore, chiederà il PIN prima di creare -->
+        <button class="btn" onclick="chiediNuovoTorneo()">➕ Nuovo Torneo</button>
         <button class="btn btn-secondary" onclick="toggleTorneiSalvati()">📂 Apri Torneo</button>
 
         <div class="admin-only" style="margin-top: 15px;">
@@ -1078,9 +1079,15 @@
             appId: "1:1088500415142:web:68d3de764d590b646dd267"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const torneiDbRef = db.ref('tornei');
+        let db = null;
+        let torneiDbRef = null;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            torneiDbRef = db.ref('tornei_v2');
+        } catch (e) {
+            console.warn("Errore inizializzazione Firebase:", e);
+        }
 
         let isAdmin = false;
         let idTorneoAttuale = null;
@@ -1098,24 +1105,55 @@
                 impostaRuoloAdmin(false);
             }
 
-            // Ascolto in tempo reale da Firebase: aggiorna la schermata di TUTTI i client
-            torneiDbRef.on('value', (snapshot) => {
-                const datiServer = snapshot.val();
-                if (datiServer && typeof datiServer === 'object') {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(datiServer));
-                    
-                    if (idTorneoAttuale && datiServer[idTorneoAttuale]) {
-                        const t = datiServer[idTorneoAttuale];
-                        if (document.getElementById('view-tabellone-diretta').classList.contains('active')) {
-                            renderizzaTabellone();
-                        } else if (document.getElementById('view-gironi-dashboard').classList.contains('active')) {
-                            renderizzaGironiDashboard();
-                        }
-                    } else if (document.getElementById('view-lobby').classList.contains('active')) {
-                        aggiornaListaLobby();
+            aggiornaListaLobby();
+
+            // Ascolto in tempo reale da Firebase
+            if (torneiDbRef) {
+                torneiDbRef.on('value', (snapshot) => {
+                    const rawVal = snapshot.val();
+                    if (!rawVal) return;
+
+                    let datiServer = null;
+                    if (typeof rawVal === 'string') {
+                        try { datiServer = JSON.parse(rawVal); } catch (e) {}
+                    } else if (typeof rawVal === 'object') {
+                        datiServer = rawVal;
                     }
-                }
-            });
+
+                    if (datiServer && typeof datiServer === 'object') {
+                        // Garantisce l'integrità dei campi array
+                        for (const k in datiServer) {
+                            if (datiServer[k]) {
+                                if (!Array.isArray(datiServer[k].partecipanti)) datiServer[k].partecipanti = [];
+                                if (!Array.isArray(datiServer[k].composizioneGironi)) datiServer[k].composizioneGironi = [[]];
+                            }
+                        }
+
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(datiServer));
+                        
+                        if (idTorneoAttuale && datiServer[idTorneoAttuale]) {
+                            if (document.getElementById('view-tabellone-diretta').classList.contains('active')) {
+                                renderizzaTabellone();
+                            } else if (document.getElementById('view-gironi-dashboard').classList.contains('active')) {
+                                renderizzaGironiDashboard();
+                            } else if (document.getElementById('view-setup').classList.contains('active')) {
+                                aggiornaInterfacciaPartecipanti();
+                            }
+                        } else if (document.getElementById('view-lobby').classList.contains('active')) {
+                            aggiornaListaLobby();
+                        }
+                    }
+                }, (error) => {
+                    console.warn("Avviso Firebase (permessi o offline):", error);
+                    const indicator = document.getElementById('cloud-indicator');
+                    if (indicator) {
+                        indicator.textContent = '⚠️ Modalità Locale';
+                        indicator.style.background = 'rgba(239, 68, 68, 0.2)';
+                        indicator.style.color = '#fca5a5';
+                        indicator.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                    }
+                });
+            }
         });
 
         function impostaRuoloAdmin(stato) {
@@ -1148,7 +1186,7 @@
             showModal({
                 type: 'prompt',
                 title: 'Accesso Gestore',
-                message: 'Inserisci il PIN per abilitare le modifiche:',
+                message: 'Inserisci il PIN per abilitare le modifiche (default: 1234):',
                 onConfirm: (pin) => {
                     if (pin === ADMIN_PIN) {
                         impostaRuoloAdmin(true);
@@ -1190,6 +1228,13 @@
             modal.style.display = 'flex';
             if (options.type === 'prompt') input.focus();
 
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmBtn.click();
+                }
+            };
+
             confirmBtn.onclick = () => {
                 modal.style.display = 'none';
                 if (options.onConfirm) options.onConfirm(options.type === 'prompt' ? input.value.trim() : true);
@@ -1197,18 +1242,39 @@
             cancelBtn.onclick = () => { modal.style.display = 'none'; };
         }
 
-        // --- STORAGE & SINCRONIZZAZIONE FIREBASE ---
+        // --- STORAGE SICURO & FIREBASE ---
         function getTornei() { 
-            return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); 
+            let data = {};
+            try {
+                data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            } catch (e) {
+                data = {};
+            }
+            if (typeof data !== 'object' || data === null) data = {};
+            // Protezione integrata contro campi undefined
+            for (const id in data) {
+                if (data[id]) {
+                    if (!Array.isArray(data[id].partecipanti)) data[id].partecipanti = [];
+                    if (!Array.isArray(data[id].composizioneGironi)) data[id].composizioneGironi = [[]];
+                }
+            }
+            return data; 
         }
 
         function salvaTornei(dati) { 
+            // 1. Salva subito in locale
             localStorage.setItem(STORAGE_KEY, JSON.stringify(dati));
-            // Salva nel cloud Firebase solo se le modifiche sono state effettuate da un admin
-            if (isAdmin) {
-                torneiDbRef.set(dati).catch(err => {
-                    console.error("Errore salvataggio Firebase:", err);
-                });
+
+            // 2. Sincronizza nel cloud come JSON string
+            if (isAdmin && torneiDbRef) {
+                try {
+                    const jsonString = JSON.stringify(dati);
+                    torneiDbRef.set(jsonString).catch(err => {
+                        console.warn("Errore salvataggio Firebase:", err);
+                    });
+                } catch (e) {
+                    console.warn("Errore durante la serializzazione Firebase:", e);
+                }
             }
         }
 
@@ -1234,7 +1300,7 @@
                     title: 'Elimina Definitivamente',
                     isDanger: true,
                     confirmText: 'Elimina Torneo',
-                    message: `Vuoi eliminare definitivamente "${t.nome}" (Stato: ${statoFormattato})? Tutti i partecipanti, i match e i dati verranno rimossi irreversibilmente anche dal cloud.`,
+                    message: `Vuoi eliminare definitivamente "${t.nome}" (Stato: ${statoFormattato})? Tutti i partecipanti, i match e i dati verranno rimossi irreversibilmente.`,
                     onConfirm: (ok) => {
                         if (ok) {
                             delete tornei[id];
@@ -1293,7 +1359,7 @@
                     Object.assign(tornei, toImport);
                     salvaTornei(tornei);
                     aggiornaListaLobby();
-                    showModal({ type: 'alert', title: 'Completato', message: `${numTornei} torneo/i importati e sincronizzati sul cloud.` });
+                    showModal({ type: 'alert', title: 'Completato', message: `${numTornei} torneo/i importati e sincronizzati.` });
                 } catch (err) {
                     showModal({ type: 'alert', title: 'Errore', message: 'Formato file non valido.' });
                 }
@@ -1304,7 +1370,21 @@
 
         // --- LOBBY ---
         function chiediNuovoTorneo() {
-            showModal({ type: 'prompt', title: 'Nuovo Torneo', onConfirm: (nome) => { if (nome) creaTorneo(nome); } });
+            if (!isAdmin) {
+                chiediAccessoAdmin(() => apriPromptNuovoTorneo());
+                return;
+            }
+            apriPromptNuovoTorneo();
+        }
+
+        function apriPromptNuovoTorneo() {
+            showModal({ 
+                type: 'prompt', 
+                title: 'Nuovo Torneo', 
+                onConfirm: (nome) => { 
+                    if (nome && nome.trim()) creaTorneo(nome.trim()); 
+                } 
+            });
             document.getElementById('modal-input').placeholder = "Nome del torneo...";
         }
 
@@ -1344,8 +1424,12 @@
         function aggiornaListaLobby() {
             const tornei = getTornei();
             const list = document.getElementById('tournaments-list');
+            if (!list) return;
             list.innerHTML = '';
-            if (Object.keys(tornei).length === 0) { list.innerHTML = '<p style="color:var(--text-muted);">Nessun torneo presente.</p>'; return; }
+            if (Object.keys(tornei).length === 0) { 
+                list.innerHTML = '<p style="color:var(--text-muted);">Nessun torneo presente.</p>'; 
+                return; 
+            }
             
             for (const id in tornei) {
                 const t = tornei[id];
@@ -1354,12 +1438,14 @@
                 if (t.stato === 'in_corso') { badgeClass = 'badge-attivo'; statoLabel = 'In corso'; }
                 if (t.stato === 'concluso') { badgeClass = 'badge-concluso'; statoLabel = 'Concluso'; }
 
+                const numGiocatori = (t.partecipanti && Array.isArray(t.partecipanti)) ? t.partecipanti.length : 0;
+
                 list.innerHTML += `
                     <div class="tournament-item" onclick="apriTorneoDaLobby('${id}')">
                         <div>
                             <strong style="color:var(--text-main); font-size:16px;">${t.nome}</strong>
                             <span class="badge ${badgeClass}">${statoLabel}</span><br>
-                            <small style="color:var(--text-muted); font-size:13px;">Modalità: ${t.modalita} • Giocatori: ${t.partecipanti.length}</small>
+                            <small style="color:var(--text-muted); font-size:13px;">Modalità: ${t.modalita} • Giocatori: ${numGiocatori}</small>
                         </div>
                         <div style="display:flex; gap:6px; align-items:center;">
                             <button class="action-icon-btn delete" onclick="event.stopPropagation(); eliminaTorneo('${id}', event)" title="Elimina torneo" style="color:var(--danger);">🗑️</button>
@@ -1381,8 +1467,11 @@
                     else apriGironiDashboard(id);
                 }
             } else {
-                if (isAdmin) apriSetup(id);
-                else showModal({ type: 'alert', title: 'Torneo in Preparazione', message: 'Questo torneo non è ancora stato avviato dal gestore.' });
+                if (isAdmin) {
+                    apriSetup(id);
+                } else {
+                    showModal({ type: 'alert', title: 'Torneo in Preparazione', message: 'Questo torneo non è ancora stato avviato dal gestore.' });
+                }
             }
         }
 
@@ -1404,6 +1493,8 @@
         function apriSetup(id) {
             idTorneoAttuale = id;
             const torneo = getTornei()[id];
+            if (!torneo) return;
+
             document.getElementById('setup-title').textContent = torneo.nome;
             document.getElementById('modalita-torneo').value = torneo.modalita || 'diretta';
             document.getElementById('numero-gironi').value = torneo.numeroGironi || 1;
@@ -1470,7 +1561,7 @@
 
             if (modalita === 'gironi' || modalita === 'mista') {
                 torneo.composizioneGironi = Array.from({ length: numGironi }, () => []);
-                torneo.composizioneGironi[0] = [...torneo.partecipanti];
+                torneo.composizioneGironi[0] = [...(torneo.partecipanti || [])];
             }
 
             salvaTornei(tornei);
@@ -1506,7 +1597,7 @@
                     else nuovaComposizione[0].push(...g);
                 });
             } else {
-                nuovaComposizione[0] = [...torneo.partecipanti];
+                nuovaComposizione[0] = [...(torneo.partecipanti || [])];
             }
             torneo.composizioneGironi = nuovaComposizione;
 
@@ -1542,6 +1633,8 @@
             const tornei = getTornei();
             const torneo = tornei[idTorneoAttuale];
 
+            if (!torneo.partecipanti) torneo.partecipanti = [];
+
             if (torneo.partecipanti.includes(nome)) {
                 return showModal({ type: 'alert', title: 'Nome già presente', message: 'Esiste già un partecipante con questo nome.' });
             }
@@ -1564,7 +1657,7 @@
         function rimuoviGiocatore(nome) {
             const tornei = getTornei();
             const torneo = tornei[idTorneoAttuale];
-            torneo.partecipanti = torneo.partecipanti.filter(p => p !== nome);
+            torneo.partecipanti = (torneo.partecipanti || []).filter(p => p !== nome);
             if (torneo.composizioneGironi) {
                 torneo.composizioneGironi = torneo.composizioneGironi.map(g => g.filter(p => p !== nome));
             }
@@ -1589,7 +1682,10 @@
 
         function aggiornaInterfacciaPartecipanti() {
             const torneo = getTornei()[idTorneoAttuale];
-            document.getElementById('contatore-giocatori').textContent = torneo.partecipanti.length;
+            if (!torneo) return;
+
+            const partecipanti = torneo.partecipanti || [];
+            document.getElementById('contatore-giocatori').textContent = partecipanti.length;
 
             const isGironi = (torneo.modalita === 'gironi' || torneo.modalita === 'mista');
             const singleList = document.getElementById('players-list');
@@ -1599,7 +1695,7 @@
                 singleList.style.display = 'block';
                 groupsContainer.style.display = 'none';
                 singleList.innerHTML = '';
-                torneo.partecipanti.forEach((p, idx) => {
+                partecipanti.forEach((p, idx) => {
                     singleList.innerHTML += `
                         <li class="player-item">
                             <span>${idx + 1}. <strong>${p}</strong></span>
@@ -1613,7 +1709,7 @@
 
                 if (!torneo.composizioneGironi || torneo.composizioneGironi.length !== torneo.numeroGironi) {
                     torneo.composizioneGironi = Array.from({length: torneo.numeroGironi}, () => []);
-                    torneo.composizioneGironi[0] = [...torneo.partecipanti];
+                    torneo.composizioneGironi[0] = [...partecipanti];
                     const tMap = getTornei();
                     tMap[idTorneoAttuale] = torneo;
                     salvaTornei(tMap);
@@ -1670,19 +1766,20 @@
             const tornei = getTornei();
             const torneo = tornei[idTorneoAttuale];
 
-            if (torneo.partecipanti.length < 2) {
+            const numPartecipanti = (torneo.partecipanti || []).length;
+            if (numPartecipanti < 2) {
                 return showModal({ type: 'alert', title: 'Attenzione', message: 'Aggiungi almeno 2 partecipanti per iniziare.' });
             }
 
             if (torneo.modalita === 'diretta') {
-                if (torneo.partecipanti.length % 2 !== 0) {
+                if (numPartecipanti % 2 !== 0) {
                     return showModal({
                         type: 'alert',
                         title: 'Numero Dispari',
-                        message: `Hai inserito ${torneo.partecipanti.length} partecipanti. Per l'eliminazione diretta è richiesto un numero PARI (es: 4, 6, 8, 16...).`
+                        message: `Hai inserito ${numPartecipanti} partecipanti. Per l'eliminazione diretta è richiesto un numero PARI (es: 4, 6, 8, 16...).`
                     });
                 }
-                torneo.eliminazione = generaStrutturaEliminazione(torneo.partecipanti.length);
+                torneo.eliminazione = generaStrutturaEliminazione(numPartecipanti);
                 torneo.stato = 'in_corso';
                 salvaTornei(tornei);
                 apriTabelloneDiretta(idTorneoAttuale);
@@ -1819,7 +1916,7 @@
 
         function renderizzaGironiDashboard() {
             const torneo = getTornei()[idTorneoAttuale];
-            if (!torneo) return;
+            if (!torneo || !torneo.gironiData) return;
 
             aggiornaBannerMista(torneo);
 
@@ -2350,7 +2447,7 @@
         // --- MODALITÀ MISTA: QUALIFICATI ---
         function apriModalPassaggioEliminazione() {
             const torneo = getTornei()[idTorneoAttuale];
-            const totGiocatori = torneo.partecipanti.length;
+            const totGiocatori = (torneo.partecipanti || []).length;
             const maxPari = totGiocatori % 2 === 0 ? totGiocatori : totGiocatori - 1;
 
             document.getElementById('hint-qualificati').textContent = 
@@ -2377,7 +2474,7 @@
 
         function modificaQualificati(delta) {
             const torneo = getTornei()[idTorneoAttuale];
-            const tot = torneo.partecipanti.length;
+            const tot = (torneo.partecipanti || []).length;
             const maxPari = tot % 2 === 0 ? tot : tot - 1;
             let nuovo = numeroQualificatiSelezionato + delta;
             if (nuovo < 2) nuovo = 2;
@@ -2749,7 +2846,7 @@
             if (torneo.modalita === 'mista' && torneo.qualificati && torneo.qualificati.length > 0) {
                 candidati = torneo.qualificati.map(q => ({ nome: q.nome, badge: `⭐ ${q.rankDesc}` }));
             } else {
-                candidati = torneo.partecipanti.map(p => ({ nome: p, badge: '' }));
+                candidati = (torneo.partecipanti || []).map(p => ({ nome: p, badge: '' }));
             }
 
             const assegnatiInTurno = {};
@@ -2839,7 +2936,7 @@
                     lista.push(torneo.qualificati[K - 1 - i].nome);
                 }
             } else {
-                lista = [...torneo.partecipanti];
+                lista = [...(torneo.partecipanti || [])];
             }
 
             for (let r = 1; r < elim.turni.length; r++) {
