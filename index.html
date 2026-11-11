@@ -1123,7 +1123,16 @@
 
     <script>
         const STORAGE_KEY = 'miei_tornei';
-        const ADMIN_PIN = '0838';
+        // Incolla qui la stringa di 64 caratteri generata al Passo 1
+const ADMIN_HASH = 'e8a34d43691d2cf0e61c5300272d414e9995299196e67828d0bc3465cffb77d8';
+
+// Funzione nativa per calcolare l'hash di ciò che viene digitato nel pop-up
+async function calcolaHashSHA256(testo) {
+    const buffer = new TextEncoder().encode(testo);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
         // --- CONFIGURAZIONE FIREBASE ---
         const firebaseConfig = {
@@ -1239,26 +1248,27 @@
         }
 
         function chiediAccessoAdmin(onSuccess) {
-            showModal({
-                type: 'prompt',
-                title: 'Accesso Gestore',
-                message: 'Inserisci il PIN per abilitare le modifiche (default: 1234):',
-                onConfirm: (pin) => {
-                    if (pin === ADMIN_PIN) {
-                        impostaRuoloAdmin(true);
-                        if (typeof onSuccess === 'function') {
-                            onSuccess();
-                        } else {
-                            showModal({ type: 'alert', title: 'Benvenuto', message: 'Modalità Gestore attivata.' });
-                        }
-                    } else {
-                        showModal({ type: 'alert', title: 'Accesso Negato', message: 'PIN errato.' });
-                    }
+    showModal({
+        type: 'prompt',
+        title: 'Accesso Gestore',
+        message: 'Inserisci la password per abilitare le modifiche:',
+        onConfirm: async (passwordInserita) => {
+            const hashInserito = await calcolaHashSHA256(passwordInserita);
+            if (hashInserito === ADMIN_HASH) {
+                impostaRuoloAdmin(true);
+                if (typeof onSuccess === 'function') {
+                    onSuccess();
+                } else {
+                    showModal({ type: 'alert', title: 'Benvenuto', message: 'Modalità Gestore attivata.' });
                 }
-            });
-            document.getElementById('modal-input').type = 'password';
-            document.getElementById('modal-input').value = '';
+            } else {
+                showModal({ type: 'alert', title: 'Accesso Negato', message: 'Password errata.' });
+            }
         }
+    });
+    document.getElementById('modal-input').type = 'password';
+    document.getElementById('modal-input').value = '';
+}
 
         function logoutAdmin() {
             impostaRuoloAdmin(false);
