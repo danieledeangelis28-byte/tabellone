@@ -725,6 +725,8 @@
             border-radius: 12px;
             width: 90%;
             max-width: 410px;
+            max-height: 90vh; /* NUOVO: Limita l'altezza della modale */
+            overflow-y: auto; /* NUOVO: Aggiunge la scrollbar se necessario */
             text-align: center;
             box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.35);
             border: 1px solid var(--border-color);
@@ -880,11 +882,17 @@
                 </label>
                 <span class="field-hint" style="margin-left: 28px; margin-top: -6px; margin-bottom: 10px;">Registra i punti rimasti a fine partita (es. biliardo, freccette).</span>
 
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; margin: 0;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; margin: 0 0 10px 0;">
                     <input type="checkbox" id="segna-punti-fatti" onchange="gestisciToggleOpzioniGironi(); salvaImpostazioni();" style="width: 18px; height: 18px; cursor: pointer; margin: 0;">
                     <span>Segna punti fatti (punteggio partita)</span>
                 </label>
-                <span class="field-hint" style="margin-left: 28px;">Registra i punti segnati da entrambi i giocatori.</span>
+                <span class="field-hint" style="margin-left: 28px; margin-top: -6px; margin-bottom: 10px;">Registra i punti segnati da entrambi i giocatori.</span>
+
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; margin: 0;">
+                    <input type="checkbox" id="abilita-penalita" onchange="salvaImpostazioni();" style="width: 18px; height: 18px; cursor: pointer; margin: 0;">
+                    <span>Abilita penalità punti</span>
+                </label>
+                <span class="field-hint" style="margin-left: 28px;">Permette di assegnare penalità che sottraggono punti in classifica durante la registrazione delle partite.</span>
             </div>
 
             <!-- Criterio Parimerito -->
@@ -1050,6 +1058,24 @@
                 <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 4px;">Punti rimasti al perdente:</label>
                 <input type="number" id="match-loser-points" min="0" value="0" placeholder="Es. 15, 30..." oninput="gestisciInputPunteggi()">
             </div>
+
+            <!-- Box Assegnazione Penalità Partita -->
+            <div id="box-match-penalita" style="display: none; margin-top: 12px; background: #fff1f2; padding: 12px; border-radius: 8px; border: 1px solid #fecdd3;">
+                <label style="font-family: var(--font-display); font-weight: 800; font-size: 13px; text-transform: uppercase; color: var(--danger); display: block; margin-bottom: 8px; letter-spacing: 0.04em;">⚠️ Assegna Penalità (Sottrazione Punti):</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px; color: var(--text-main); font-weight: 600; display: block; margin-bottom: 4px;">Giocatore penalizzato:</label>
+                        <select id="match-penalita-giocatore" onchange="gestisciVisibilitaPenalita()">
+                            <option value="">Nessuna penalità</option>
+                        </select>
+                    </div>
+                    <div id="box-penalita-punti" style="flex: 1; display: none;">
+                        <label style="font-size: 12px; color: var(--text-main); font-weight: 600; display: block; margin-bottom: 4px;">Punti da sottrarre:</label>
+                        <input type="number" id="match-penalita-punti" min="1" value="1" placeholder="Es. 1, 2...">
+                    </div>
+                </div>
+            </div>
+
             <div class="modal-buttons">
                 <button class="modal-btn modal-btn-cancel" onclick="chiudiModalPartita()">Annulla</button>
                 <button class="modal-btn modal-btn-confirm" onclick="confermaRegistrazionePartita()">Salva Partita</button>
@@ -1097,7 +1123,7 @@
 
     <script>
         const STORAGE_KEY = 'miei_tornei';
-        const ADMIN_PIN = '0838';
+        const ADMIN_PIN = '1234';
 
         // --- CONFIGURAZIONE FIREBASE ---
         const firebaseConfig = {
@@ -1429,6 +1455,7 @@
                 consentiPareggio: false,
                 contaPuntiRimasti: false,
                 segnaPuntiFatti: false,
+                abilitaPenalita: false,
                 criterioParimerito: 'scontri_diretti',
                 puntiVittoria: 3,
                 puntiPareggio: 1,
@@ -1530,6 +1557,7 @@
             document.getElementById('consenti-pareggio').checked = Boolean(torneo.consentiPareggio);
             document.getElementById('conta-punti-rimasti').checked = Boolean(torneo.contaPuntiRimasti);
             document.getElementById('segna-punti-fatti').checked = Boolean(torneo.segnaPuntiFatti);
+            document.getElementById('abilita-penalita').checked = Boolean(torneo.abilitaPenalita);
             document.getElementById('punti-vittoria').value = (torneo.puntiVittoria !== undefined) ? torneo.puntiVittoria : 3;
             document.getElementById('punti-pareggio').value = (torneo.puntiPareggio !== undefined) ? torneo.puntiPareggio : 1;
             document.getElementById('punti-sconfitta').value = (torneo.puntiSconfitta !== undefined) ? torneo.puntiSconfitta : 0;
@@ -1642,6 +1670,7 @@
             tornei[idTorneoAttuale].consentiPareggio = document.getElementById('consenti-pareggio').checked;
             tornei[idTorneoAttuale].contaPuntiRimasti = document.getElementById('conta-punti-rimasti').checked;
             tornei[idTorneoAttuale].segnaPuntiFatti = document.getElementById('segna-punti-fatti').checked;
+            tornei[idTorneoAttuale].abilitaPenalita = document.getElementById('abilita-penalita').checked;
             tornei[idTorneoAttuale].criterioParimerito = document.getElementById('criterio-parimerito') ? document.getElementById('criterio-parimerito').value : 'scontri_diretti';
             tornei[idTorneoAttuale].puntiVittoria = parseFloat(document.getElementById('punti-vittoria').value) || 0;
             tornei[idTorneoAttuale].puntiPareggio = parseFloat(document.getElementById('punti-pareggio').value) || 0;
@@ -1959,6 +1988,7 @@
             const hasDraw = Boolean(torneo.consentiPareggio);
             const hasPuntiRimasti = Boolean(torneo.contaPuntiRimasti);
             const hasPuntiFatti = Boolean(torneo.segnaPuntiFatti);
+            const hasPenalita = Boolean(torneo.abilitaPenalita);
             const criterio = torneo.criterioParimerito || 'scontri_diretti';
 
             torneo.gironiData.gruppi.forEach((gruppo, gIdx) => {
@@ -1967,7 +1997,7 @@
 
                 const stats = {};
                 gruppo.partecipanti.forEach(p => {
-                    stats[p] = { nome: p, pg: 0, v: 0, p: 0, s: 0, pt: 0, puntiRimasti: 0, puntiFatti: 0, puntiSubiti: 0 };
+                    stats[p] = { nome: p, pg: 0, v: 0, p: 0, s: 0, pt: 0, puntiRimasti: 0, puntiFatti: 0, puntiSubiti: 0, penalita: 0 };
                 });
 
                 gruppo.partite.forEach(partita => {
@@ -2021,6 +2051,24 @@
                             }
                         }
                     }
+
+                    // Sottrazione Penalità Punti
+                    if (hasPenalita && partita.puntiPenalita && partita.penalitaGiocatore) {
+                        const pPts = Number(partita.puntiPenalita) || 0;
+                        if (partita.penalitaGiocatore === '__BOTH__') {
+                            if (stats[partita.p1]) {
+                                stats[partita.p1].penalita += pPts;
+                                stats[partita.p1].pt -= pPts;
+                            }
+                            if (stats[partita.p2]) {
+                                stats[partita.p2].penalita += pPts;
+                                stats[partita.p2].pt -= pPts;
+                            }
+                        } else if (stats[partita.penalitaGiocatore]) {
+                            stats[partita.penalitaGiocatore].penalita += pPts;
+                            stats[partita.penalitaGiocatore].pt -= pPts;
+                        }
+                    }
                 });
 
                 const gironeCompletato = numPartecipanti > 1 && Object.values(stats).every(s => s.pg >= partiteTargetPerGiocatore);
@@ -2059,6 +2107,7 @@
                                 <th>S</th>
                                 ${hasPuntiFatti ? '<th>PF</th><th>PS</th><th>Diff</th>' : ''}
                                 ${hasPuntiRimasti ? '<th>Punti Rimasti</th>' : ''}
+                                ${hasPenalita ? '<th>Pen</th>' : ''}
                             </tr>
                         </thead>
                         <tbody>
@@ -2081,6 +2130,7 @@
                             <td><span style="color:#64748b; font-weight:600;">${gioc.s}</span></td>
                             ${hasPuntiFatti ? `<td>${gioc.puntiFatti}</td><td>${gioc.puntiSubiti}</td><td style="font-weight:700; color:${diffColor};">${diffTxt}</td>` : ''}
                             ${hasPuntiRimasti ? `<td>${gioc.puntiRimasti}</td>` : ''}
+                            ${hasPenalita ? `<td><span style="color:var(--danger); font-weight:700;">${gioc.penalita > 0 ? '-' + gioc.penalita : '0'}</span></td>` : ''}
                         </tr>
                     `;
                 });
@@ -2105,6 +2155,15 @@
                         if (isDraw) {
                             let metaP1 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
                             let metaP2 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
+
+                            if (hasPenalita && partita.puntiPenalita && partita.penalitaGiocatore) {
+                                if (partita.penalitaGiocatore === partita.p1 || partita.penalitaGiocatore === '__BOTH__') {
+                                    metaP1 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
+                                }
+                                if (partita.penalitaGiocatore === partita.p2 || partita.penalitaGiocatore === '__BOTH__') {
+                                    metaP2 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
+                                }
+                            }
 
                             html += `
                                 <div class="match-card-modern">
@@ -2133,6 +2192,15 @@
                             if (hasPuntiRimasti) {
                                 const rimasti = (partita.puntiPerdente !== undefined && partita.puntiPerdente !== null) ? partita.puntiPerdente : 0;
                                 metaLoser += `<span class="meta-badge stat-rimasti">Punti rimasti: <strong>${rimasti}</strong></span>`;
+                            }
+
+                            if (hasPenalita && partita.puntiPenalita && partita.penalitaGiocatore) {
+                                if (partita.penalitaGiocatore === partita.vincitore || partita.penalitaGiocatore === '__BOTH__') {
+                                    metaWinner += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
+                                }
+                                if (partita.penalitaGiocatore === partita.perdente || partita.penalitaGiocatore === '__BOTH__') {
+                                    metaLoser += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
+                                }
                             }
 
                             html += `
@@ -2208,6 +2276,15 @@
             document.getElementById('match-score-p2').value = '';
             document.getElementById('match-loser-points').value = '0';
 
+            const boxPenalita = document.getElementById('box-match-penalita');
+            if (boxPenalita) {
+                boxPenalita.style.display = (torneo && torneo.abilitaPenalita) ? 'block' : 'none';
+            }
+            const penSelect = document.getElementById('match-penalita-giocatore');
+            if (penSelect) penSelect.value = '';
+            const penPts = document.getElementById('match-penalita-punti');
+            if (penPts) penPts.value = '1';
+
             aggiornaOpzioniVincitore();
             document.getElementById('match-modal').style.display = 'flex';
         }
@@ -2248,11 +2325,34 @@
                 winnerSelect.value = prevVal;
             }
 
+            // Aggiorna opzioni selezione per Penalità
+            const penSelect = document.getElementById('match-penalita-giocatore');
+            if (penSelect) {
+                const prevPen = penSelect.value;
+                penSelect.innerHTML = `<option value="">Nessuna penalità</option>`;
+                if (p1) penSelect.innerHTML += `<option value="${p1}">${p1}</option>`;
+                if (p2 && p2 !== p1) penSelect.innerHTML += `<option value="${p2}">${p2}</option>`;
+                if (p1 && p2 && p1 !== p2) penSelect.innerHTML += `<option value="__BOTH__">Entrambi (${p1} e ${p2})</option>`;
+                if (prevPen && (prevPen === p1 || prevPen === p2 || prevPen === '__BOTH__')) {
+                    penSelect.value = prevPen;
+                } else {
+                    penSelect.value = '';
+                }
+                gestisciVisibilitaPenalita();
+            }
+
             if (torneo && torneo.segnaPuntiFatti) {
                 gestisciInputPunteggi();
             } else {
                 gestisciVisibilitaPuntiRimasti();
             }
+        }
+
+        function gestisciVisibilitaPenalita() {
+            const select = document.getElementById('match-penalita-giocatore');
+            const boxPts = document.getElementById('box-penalita-punti');
+            if (!select || !boxPts) return;
+            boxPts.style.display = select.value ? 'block' : 'none';
         }
 
         function gestisciInputPunteggi() {
@@ -2413,6 +2513,21 @@
                 }
             }
 
+            // Gestione eventuale penalità
+            let penalitaGiocatore = null;
+            let puntiPenalita = 0;
+            if (torneo.abilitaPenalita) {
+                const penPlayer = document.getElementById('match-penalita-giocatore').value;
+                if (penPlayer) {
+                    const penPtsVal = parseInt(document.getElementById('match-penalita-punti').value, 10);
+                    if (isNaN(penPtsVal) || penPtsVal <= 0) {
+                        return showModal({ type: 'alert', title: 'Attenzione', message: 'Inserisci un valore valido di punti da sottrarre per la penalità (almeno 1).' });
+                    }
+                    penalitaGiocatore = penPlayer;
+                    puntiPenalita = penPtsVal;
+                }
+            }
+
             const vincitore = isDraw ? null : esito;
             const perdente = isDraw ? null : (vincitore === p1 ? p2 : p1);
 
@@ -2441,7 +2556,9 @@
                 puntiPerdente: puntiPerdente,
                 scoreP1: scoreP1,
                 scoreP2: scoreP2,
-                data: dataString
+                data: dataString,
+                penalitaGiocatore: penalitaGiocatore,
+                puntiPenalita: puntiPenalita
             });
 
             const statsDopo = { ...statsPrima };
@@ -2581,12 +2698,13 @@
             const ptsLoss = (torneo.puntiSconfitta !== undefined) ? Number(torneo.puntiSconfitta) : 0;
             const hasPuntiRimasti = Boolean(torneo.contaPuntiRimasti);
             const hasPuntiFatti = Boolean(torneo.segnaPuntiFatti);
+            const hasPenalita = Boolean(torneo.abilitaPenalita);
             const criterio = torneo.criterioParimerito || 'scontri_diretti';
 
             const gironiClassificati = torneo.gironiData.gruppi.map(gruppo => {
                 const stats = {};
                 gruppo.partecipanti.forEach(p => {
-                    stats[p] = { nome: p, v: 0, p: 0, s: 0, pt: 0, pg: 0, puntiRimasti: 0, puntiFatti: 0, puntiSubiti: 0, girone: gruppo.nome };
+                    stats[p] = { nome: p, v: 0, p: 0, s: 0, pt: 0, pg: 0, puntiRimasti: 0, puntiFatti: 0, puntiSubiti: 0, penalita: 0, girone: gruppo.nome };
                 });
                 gruppo.partite.forEach(partita => {
                     const isDraw = partita.isPareggio || partita.vincitore === '__DRAW__';
@@ -2621,6 +2739,18 @@
                                 stats[partita.perdente].puntiSubiti += winScore;
                             }
                             if (hasPuntiRimasti) stats[partita.perdente].puntiRimasti += Number(partita.puntiPerdente || 0);
+                        }
+                    }
+
+                    // Sottrazione Penalità Punti nei Qualificati
+                    if (hasPenalita && partita.puntiPenalita && partita.penalitaGiocatore) {
+                        const pPts = Number(partita.puntiPenalita) || 0;
+                        if (partita.penalitaGiocatore === '__BOTH__') {
+                            if (stats[partita.p1]) { stats[partita.p1].penalita += pPts; stats[partita.p1].pt -= pPts; }
+                            if (stats[partita.p2]) { stats[partita.p2].penalita += pPts; stats[partita.p2].pt -= pPts; }
+                        } else if (stats[partita.penalitaGiocatore]) {
+                            stats[partita.penalitaGiocatore].penalita += pPts;
+                            stats[partita.penalitaGiocatore].pt -= pPts;
                         }
                     }
                 });
