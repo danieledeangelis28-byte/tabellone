@@ -931,11 +931,17 @@
                 </label>
                 <span class="field-hint" style="margin-left: 28px; margin-top: -6px; margin-bottom: 10px;">Registra i punti segnati da entrambi i giocatori.</span>
 
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; margin: 0;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; margin: 0 0 10px 0;">
                     <input type="checkbox" id="abilita-penalita" onchange="salvaImpostazioni();" style="width: 18px; height: 18px; cursor: pointer; margin: 0;">
                     <span>Abilita penalità punti</span>
                 </label>
-                <span class="field-hint" style="margin-left: 28px;">Permette di assegnare penalità che sottraggono punti in classifica durante la registrazione delle partite.</span>
+                <span class="field-hint" style="margin-left: 28px; margin-top: -6px; margin-bottom: 10px;">Permette di assegnare penalità che sottraggono punti in classifica durante la registrazione delle partite.</span>
+
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; margin: 0;">
+                    <input type="checkbox" id="assegna-punti-manualmente" onchange="salvaImpostazioni();" style="width: 18px; height: 18px; cursor: pointer; margin: 0;">
+                    <span>Assegna i punti ad ogni partita</span>
+                </label>
+                <span class="field-hint" style="margin-left: 28px;">Se attivo dovrai selezionare manualmente per ogni partita quanti punti assegnare a vittoria e sconfitta (es. biliardino).</span>
             </div>
 
             <!-- Criterio Parimerito -->
@@ -1096,6 +1102,21 @@
                 <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Esito calcolato:</label>
                 <div id="auto-outcome-badge" style="padding: 10px 14px; border-radius: 6px; font-weight: 700; font-size: 14px; text-align: center; background: #f8fafc; border: 1px solid var(--border-color); color: var(--text-muted); transition: all 0.2s;">
                     Inserisci i punteggi
+                </div>
+            </div>
+
+            <!-- Box Assegnazione Punti Classifica Manuali -->
+            <div id="box-match-punti-manuali" style="display: none; margin-top: 12px; background: #eff6ff; padding: 12px; border-radius: 8px; border: 1px solid #bfdbfe;">
+                <label style="font-family: var(--font-display); font-weight: 800; font-size: 13px; text-transform: uppercase; color: var(--primary); display: block; margin-bottom: 8px; letter-spacing: 0.04em;">🏆 Assegna Punti Classifica:</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="flex: 1;">
+                        <label id="label-pt-vincitore" style="font-size: 12px; color: var(--text-main); font-weight: 600; display: block; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Vincitore:</label>
+                        <input type="number" id="match-pt-vincitore" min="0" value="3">
+                    </div>
+                    <div style="flex: 1;">
+                        <label id="label-pt-perdente" style="font-size: 12px; color: var(--text-main); font-weight: 600; display: block; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Perdente:</label>
+                        <input type="number" id="match-pt-perdente" min="0" value="0">
+                    </div>
                 </div>
             </div>
             
@@ -1582,6 +1603,7 @@
                 contaPuntiRimasti: false,
                 segnaPuntiFatti: false,
                 abilitaPenalita: false,
+                assegnaPuntiManualmente: false,
                 criterioParimerito: 'scontri_diretti',
                 puntiVittoria: 3,
                 puntiPareggio: 1,
@@ -1688,6 +1710,7 @@
             document.getElementById('conta-punti-rimasti').checked = Boolean(torneo.contaPuntiRimasti);
             document.getElementById('segna-punti-fatti').checked = Boolean(torneo.segnaPuntiFatti);
             document.getElementById('abilita-penalita').checked = Boolean(torneo.abilitaPenalita);
+            document.getElementById('assegna-punti-manualmente').checked = Boolean(torneo.assegnaPuntiManualmente);
             document.getElementById('punti-vittoria').value = (torneo.puntiVittoria !== undefined) ? torneo.puntiVittoria : 3;
             document.getElementById('punti-pareggio').value = (torneo.puntiPareggio !== undefined) ? torneo.puntiPareggio : 1;
             document.getElementById('punti-sconfitta').value = (torneo.puntiSconfitta !== undefined) ? torneo.puntiSconfitta : 0;
@@ -1801,6 +1824,7 @@
             tornei[idTorneoAttuale].contaPuntiRimasti = document.getElementById('conta-punti-rimasti').checked;
             tornei[idTorneoAttuale].segnaPuntiFatti = document.getElementById('segna-punti-fatti').checked;
             tornei[idTorneoAttuale].abilitaPenalita = document.getElementById('abilita-penalita').checked;
+            tornei[idTorneoAttuale].assegnaPuntiManualmente = document.getElementById('assegna-punti-manualmente').checked;
             tornei[idTorneoAttuale].criterioParimerito = document.getElementById('criterio-parimerito') ? document.getElementById('criterio-parimerito').value : 'scontri_diretti';
             tornei[idTorneoAttuale].puntiVittoria = parseFloat(document.getElementById('punti-vittoria').value) || 0;
             tornei[idTorneoAttuale].puntiPareggio = parseFloat(document.getElementById('punti-pareggio').value) || 0;
@@ -2145,6 +2169,7 @@
             const hasPuntiRimasti = Boolean(torneo.contaPuntiRimasti);
             const hasPuntiFatti = Boolean(torneo.segnaPuntiFatti);
             const hasPenalita = Boolean(torneo.abilitaPenalita);
+            const hasAssegnazioneManuale = Boolean(torneo.assegnaPuntiManualmente);
             const criterio = torneo.criterioParimerito || 'scontri_diretti';
 
             // Check if ALL groups in tournament are completed for the global banner
@@ -2183,7 +2208,11 @@
                     if (stats[partita.p1]) {
                         stats[partita.p1].pg += 1;
                         stats[partita.p1].p += 1;
-                        stats[partita.p1].pt += ptsDraw;
+                        if (hasAssegnazioneManuale && partita.puntiVincitore !== undefined) {
+                            stats[partita.p1].pt += Number(partita.puntiVincitore);
+                        } else {
+                            stats[partita.p1].pt += ptsDraw;
+                        }
                         if (hasPuntiFatti && s1 !== null && s2 !== null) {
                             stats[partita.p1].puntiFatti += s1;
                             stats[partita.p1].puntiSubiti += s2;
@@ -2192,7 +2221,11 @@
                     if (stats[partita.p2]) {
                         stats[partita.p2].pg += 1;
                         stats[partita.p2].p += 1;
-                        stats[partita.p2].pt += ptsDraw;
+                        if (hasAssegnazioneManuale && partita.puntiVincitore !== undefined) {
+                            stats[partita.p2].pt += Number(partita.puntiVincitore);
+                        } else {
+                            stats[partita.p2].pt += ptsDraw;
+                        }
                         if (hasPuntiFatti && s1 !== null && s2 !== null) {
                             stats[partita.p2].puntiFatti += s2;
                             stats[partita.p2].puntiSubiti += s1;
@@ -2202,7 +2235,11 @@
                     if (stats[partita.vincitore]) {
                         stats[partita.vincitore].pg += 1;
                         stats[partita.vincitore].v += 1;
-                        stats[partita.vincitore].pt += ptsWin;
+                        if (hasAssegnazioneManuale && partita.puntiVincitore !== undefined) {
+                            stats[partita.vincitore].pt += Number(partita.puntiVincitore);
+                        } else {
+                            stats[partita.vincitore].pt += ptsWin;
+                        }
                         if (hasPuntiFatti && s1 !== null && s2 !== null) {
                             const winScore = (partita.vincitore === partita.p1) ? s1 : s2;
                             const loseScore = (partita.vincitore === partita.p1) ? s2 : s1;
@@ -2213,7 +2250,11 @@
                     if (stats[partita.perdente]) {
                         stats[partita.perdente].pg += 1;
                         stats[partita.perdente].s += 1;
-                        stats[partita.perdente].pt += ptsLoss;
+                        if (hasAssegnazioneManuale && partita.puntiPerdenteC !== undefined) {
+                            stats[partita.perdente].pt += Number(partita.puntiPerdenteC);
+                        } else {
+                            stats[partita.perdente].pt += ptsLoss;
+                        }
                         if (hasPuntiFatti && s1 !== null && s2 !== null) {
                             const winScore = (partita.vincitore === partita.p1) ? s1 : s2;
                             const loseScore = (partita.vincitore === partita.p1) ? s2 : s1;
@@ -2328,13 +2369,18 @@
                     if (isDraw) {
                         let metaP1 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
                         let metaP2 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
+                        
+                        if (hasAssegnazioneManuale && partita.puntiVincitore !== undefined) {
+                            metaP1 += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${partita.puntiVincitore} pt Classifica</span>`;
+                            metaP2 += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${partita.puntiVincitore} pt Classifica</span>`;
+                        }
 
                         if (hasPenalita && partita.puntiPenalita && partita.penalitaGiocatore) {
                             if (partita.penalitaGiocatore === partita.p1 || partita.penalitaGiocatore === '__BOTH__') {
-                                metaP1 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
+                                metaP1 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt Pen.</span>`;
                             }
                             if (partita.penalitaGiocatore === partita.p2 || partita.penalitaGiocatore === '__BOTH__') {
-                                metaP2 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
+                                metaP2 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt Pen.</span>`;
                             }
                         }
 
@@ -2366,13 +2412,18 @@
                             const rimasti = (partita.puntiPerdente !== undefined && partita.puntiPerdente !== null) ? partita.puntiPerdente : 0;
                             metaLoser += `<span class="meta-badge stat-rimasti">Punti rimasti: <strong>${rimasti}</strong></span>`;
                         }
+                        
+                        if (hasAssegnazioneManuale && partita.puntiVincitore !== undefined && partita.puntiPerdenteC !== undefined) {
+                            metaWinner += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${partita.puntiVincitore} pt Classifica</span>`;
+                            metaLoser += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${partita.puntiPerdenteC} pt Classifica</span>`;
+                        }
 
                         if (hasPenalita && partita.puntiPenalita && partita.penalitaGiocatore) {
                             if (partita.penalitaGiocatore === partita.vincitore || partita.penalitaGiocatore === '__BOTH__') {
-                                metaWinner += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
+                                metaWinner += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt Pen.</span>`;
                             }
                             if (partita.penalitaGiocatore === partita.perdente || partita.penalitaGiocatore === '__BOTH__') {
-                                metaLoser += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
+                                metaLoser += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt Pen.</span>`;
                             }
                         }
 
@@ -2427,6 +2478,7 @@
             const hasPuntiFatti = Boolean(torneo.segnaPuntiFatti);
             const hasPuntiRimasti = Boolean(torneo.contaPuntiRimasti);
             const hasPenalita = Boolean(torneo.abilitaPenalita);
+            const hasAssegnazioneManuale = Boolean(torneo.assegnaPuntiManualmente);
 
             if (opponents.length === 0) {
                 container.innerHTML = '<p style="color:var(--text-muted); font-size:13px; font-style:italic;">Nessun altro partecipante nel girone.</p>';
@@ -2460,13 +2512,18 @@
                         if (isDraw) {
                             let metaP1 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
                             let metaP2 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
+                            
+                            if (hasAssegnazioneManuale && match.puntiVincitore !== undefined) {
+                                metaP1 += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${match.puntiVincitore} pt Classifica</span>`;
+                                metaP2 += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${match.puntiVincitore} pt Classifica</span>`;
+                            }
 
                             if (hasPenalita && match.puntiPenalita && match.penalitaGiocatore) {
                                 if (match.penalitaGiocatore === match.p1 || match.penalitaGiocatore === '__BOTH__') {
-                                    metaP1 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt</span>`;
+                                    metaP1 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt Pen.</span>`;
                                 }
                                 if (match.penalitaGiocatore === match.p2 || match.penalitaGiocatore === '__BOTH__') {
-                                    metaP2 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt</span>`;
+                                    metaP2 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt Pen.</span>`;
                                 }
                             }
 
@@ -2495,13 +2552,18 @@
                                 const rimasti = (match.puntiPerdente !== undefined && match.puntiPerdente !== null) ? match.puntiPerdente : 0;
                                 metaLoser += `<span class="meta-badge stat-rimasti">Punti rimasti: <strong>${rimasti}</strong></span>`;
                             }
+                            
+                            if (hasAssegnazioneManuale && match.puntiVincitore !== undefined && match.puntiPerdenteC !== undefined) {
+                                metaWinner += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${match.puntiVincitore} pt Classifica</span>`;
+                                metaLoser += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${match.puntiPerdenteC} pt Classifica</span>`;
+                            }
 
                             if (hasPenalita && match.puntiPenalita && match.penalitaGiocatore) {
                                 if (match.penalitaGiocatore === match.vincitore || match.penalitaGiocatore === '__BOTH__') {
-                                    metaWinner += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt</span>`;
+                                    metaWinner += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt Pen.</span>`;
                                 }
                                 if (match.penalitaGiocatore === match.perdente || match.penalitaGiocatore === '__BOTH__') {
-                                    metaLoser += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt</span>`;
+                                    metaLoser += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt Pen.</span>`;
                                 }
                             }
 
@@ -2598,6 +2660,15 @@
             const penPts = document.getElementById('match-penalita-punti');
             if (penPts) penPts.value = '1';
 
+            const boxPuntiManuali = document.getElementById('box-match-punti-manuali');
+            if (boxPuntiManuali) {
+                boxPuntiManuali.style.display = (torneo && torneo.assegnaPuntiManualmente) ? 'block' : 'none';
+            }
+            const manualWin = document.getElementById('match-pt-vincitore');
+            if (manualWin) manualWin.value = (torneo && torneo.puntiVittoria !== undefined) ? torneo.puntiVittoria : '3';
+            const manualLose = document.getElementById('match-pt-perdente');
+            if (manualLose) manualLose.value = (torneo && torneo.puntiSconfitta !== undefined) ? torneo.puntiSconfitta : '0';
+
             aggiornaOpzioniVincitore();
             document.getElementById('match-modal').style.display = 'flex';
         }
@@ -2658,6 +2729,30 @@
                 gestisciInputPunteggi();
             } else {
                 gestisciVisibilitaPuntiRimasti();
+                gestisciEtichettePuntiManuali(winnerSelect.value, p1, p2);
+            }
+        }
+
+        function gestisciEtichettePuntiManuali(winnerVal, p1, p2) {
+            const labelWin = document.getElementById('label-pt-vincitore');
+            const labelLose = document.getElementById('label-pt-perdente');
+            const inputWin = document.getElementById('match-pt-vincitore');
+            const inputLose = document.getElementById('match-pt-perdente');
+            const torneo = getTornei()[idTorneoAttuale];
+
+            if (!labelWin || !labelLose || !torneo || !torneo.assegnaPuntiManualmente) return;
+
+            if (winnerVal === '__DRAW__') {
+                labelWin.textContent = `Pareggio (${p1}):`;
+                labelLose.textContent = `Pareggio (${p2}):`;
+                inputWin.value = (torneo.puntiPareggio !== undefined) ? torneo.puntiPareggio : '1';
+                inputLose.value = (torneo.puntiPareggio !== undefined) ? torneo.puntiPareggio : '1';
+            } else {
+                const loserName = winnerVal === p1 ? p2 : p1;
+                labelWin.textContent = `Vincitore (${winnerVal}):`;
+                labelLose.textContent = `Perdente (${loserName}):`;
+                inputWin.value = (torneo.puntiVittoria !== undefined) ? torneo.puntiVittoria : '3';
+                inputLose.value = (torneo.puntiSconfitta !== undefined) ? torneo.puntiSconfitta : '0';
             }
         }
 
@@ -2688,6 +2783,7 @@
                 badge.style.color = 'var(--text-muted)';
                 badge.style.borderColor = 'var(--border-color)';
                 gestisciVisibilitaPuntiRimasti();
+                gestisciEtichettePuntiManuali('', p1, p2);
                 return;
             }
 
@@ -2724,6 +2820,7 @@
                 }
             }
             gestisciVisibilitaPuntiRimasti();
+            gestisciEtichettePuntiManuali(winnerSelect.value, p1, p2);
         }
 
         function gestisciVisibilitaPuntiRimasti() {
@@ -2743,6 +2840,10 @@
                     winnerVal = '';
                 }
             }
+
+            const p1 = document.getElementById('match-p1').value;
+            const p2 = document.getElementById('match-p2').value;
+            gestisciEtichettePuntiManuali(winnerVal, p1, p2);
 
             const isDraw = (winnerVal === '__DRAW__');
 
@@ -2826,6 +2927,22 @@
                 }
             }
 
+            // Gestione assegnazione punti manuale
+            let puntiVincitoreManuale = undefined;
+            let puntiPerdenteManuale = undefined;
+            if (torneo.assegnaPuntiManualmente) {
+                const pW = document.getElementById('match-pt-vincitore').value;
+                const pL = document.getElementById('match-pt-perdente').value;
+                if (pW === '' || pL === '') {
+                    return showModal({ type: 'alert', title: 'Attenzione', message: 'Inserisci i punti classifica per entrambi i partecipanti.' });
+                }
+                puntiVincitoreManuale = parseFloat(pW);
+                puntiPerdenteManuale = parseFloat(pL);
+                if (isNaN(puntiVincitoreManuale) || isNaN(puntiPerdenteManuale)) {
+                    return showModal({ type: 'alert', title: 'Attenzione', message: 'I punti classifica devono essere numeri validi.' });
+                }
+            }
+
             // Gestione eventuale penalità
             let penalitaGiocatore = null;
             let puntiPenalita = 0;
@@ -2871,7 +2988,9 @@
                 scoreP2: scoreP2,
                 data: dataString,
                 penalitaGiocatore: penalitaGiocatore,
-                puntiPenalita: puntiPenalita
+                puntiPenalita: puntiPenalita,
+                puntiVincitore: puntiVincitoreManuale,
+                puntiPerdenteC: puntiPerdenteManuale
             });
 
             const statsDopo = { ...statsPrima };
@@ -3012,6 +3131,7 @@
             const hasPuntiRimasti = Boolean(torneo.contaPuntiRimasti);
             const hasPuntiFatti = Boolean(torneo.segnaPuntiFatti);
             const hasPenalita = Boolean(torneo.abilitaPenalita);
+            const hasAssegnazioneManuale = Boolean(torneo.assegnaPuntiManualmente);
             const criterio = torneo.criterioParimerito || 'scontri_diretti';
 
             const gironiClassificati = torneo.gironiData.gruppi.map(gruppo => {
@@ -3026,16 +3146,25 @@
 
                     if (isDraw) {
                         if (stats[partita.p1]) {
-                            stats[partita.p1].pg++; stats[partita.p1].p++; stats[partita.p1].pt += ptsDraw;
+                            stats[partita.p1].pg++; stats[partita.p1].p++; 
+                            if (hasAssegnazioneManuale && partita.puntiVincitore !== undefined) stats[partita.p1].pt += Number(partita.puntiVincitore);
+                            else stats[partita.p1].pt += ptsDraw;
+                            
                             if (hasPuntiFatti && s1 !== null && s2 !== null) { stats[partita.p1].puntiFatti += s1; stats[partita.p1].puntiSubiti += s2; }
                         }
                         if (stats[partita.p2]) {
-                            stats[partita.p2].pg++; stats[partita.p2].p++; stats[partita.p2].pt += ptsDraw;
+                            stats[partita.p2].pg++; stats[partita.p2].p++; 
+                            if (hasAssegnazioneManuale && partita.puntiVincitore !== undefined) stats[partita.p2].pt += Number(partita.puntiVincitore);
+                            else stats[partita.p2].pt += ptsDraw;
+                            
                             if (hasPuntiFatti && s1 !== null && s2 !== null) { stats[partita.p2].puntiFatti += s2; stats[partita.p2].puntiSubiti += s1; }
                         }
                     } else {
                         if (stats[partita.vincitore]) {
-                            stats[partita.vincitore].pg++; stats[partita.vincitore].v++; stats[partita.vincitore].pt += ptsWin;
+                            stats[partita.vincitore].pg++; stats[partita.vincitore].v++; 
+                            if (hasAssegnazioneManuale && partita.puntiVincitore !== undefined) stats[partita.vincitore].pt += Number(partita.puntiVincitore);
+                            else stats[partita.vincitore].pt += ptsWin;
+
                             if (hasPuntiFatti && s1 !== null && s2 !== null) {
                                 const winScore = (partita.vincitore === partita.p1) ? s1 : s2;
                                 const loseScore = (partita.vincitore === partita.p1) ? s2 : s1;
@@ -3044,7 +3173,10 @@
                             }
                         }
                         if (stats[partita.perdente]) {
-                            stats[partita.perdente].pg++; stats[partita.perdente].s++; stats[partita.perdente].pt += ptsLoss;
+                            stats[partita.perdente].pg++; stats[partita.perdente].s++; 
+                            if (hasAssegnazioneManuale && partita.puntiPerdenteC !== undefined) stats[partita.perdente].pt += Number(partita.puntiPerdenteC);
+                            else stats[partita.perdente].pt += ptsLoss;
+
                             if (hasPuntiFatti && s1 !== null && s2 !== null) {
                                 const winScore = (partita.vincitore === partita.p1) ? s1 : s2;
                                 const loseScore = (partita.vincitore === partita.p1) ? s2 : s1;
