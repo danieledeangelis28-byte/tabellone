@@ -1207,6 +1207,7 @@
 
         let db = null;
         let torneiDbRef = null;
+        let isLegacySingleStringOnServer = false;
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.database();
@@ -1234,17 +1235,34 @@
 
             aggiornaListaLobby();
 
-            // Ascolto in tempo reale da Firebase
+            // Ascolto in tempo reale da Firebase (pacchetti separati per torneo)
             if (torneiDbRef) {
                 torneiDbRef.on('value', (snapshot) => {
                     const rawVal = snapshot.val();
-                    if (!rawVal) return;
+                    if (!rawVal) {
+                        isLegacySingleStringOnServer = false;
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify({}));
+                        if (document.getElementById('view-lobby').classList.contains('active')) {
+                            aggiornaListaLobby();
+                        }
+                        return;
+                    }
 
                     let datiServer = null;
                     if (typeof rawVal === 'string') {
+                        isLegacySingleStringOnServer = true;
                         try { datiServer = JSON.parse(rawVal); } catch (e) {}
                     } else if (typeof rawVal === 'object') {
-                        datiServer = rawVal;
+                        isLegacySingleStringOnServer = false;
+                        datiServer = {};
+                        for (const k in rawVal) {
+                            const item = rawVal[k];
+                            if (typeof item === 'string') {
+                                try { datiServer[k] = JSON.parse(item); } catch (e) {}
+                            } else if (item && typeof item === 'object') {
+                                datiServer[k] = item;
+                            }
+                        }
                     }
 
                     if (datiServer && typeof datiServer === 'object') {
@@ -1387,14 +1405,34 @@
             return data; 
         }
 
-        function salvaTornei(dati) { 
+        function salvaTornei(dati, idTarget = null) { 
             localStorage.setItem(STORAGE_KEY, JSON.stringify(dati));
 
             if (isAdmin && torneiDbRef) {
                 try {
-                    const jsonString = JSON.stringify(dati);
-                    torneiDbRef.set(jsonString).catch(err => {
-                        console.warn("Errore salvataggio Firebase:", err);
+                    if (isLegacySingleStringOnServer) {
+                        const pacchetti = {};
+                        for (const k in dati) {
+                            if (dati[k]) pacchetti[k] = JSON.stringify(dati[k]);
+                        }
+                        torneiDbRef.set(pacchetti).then(() => {
+                            isLegacySingleStringOnServer = false;
+                        }).catch(err => {
+                            console.warn("Errore migrazione Firebase:", err);
+                        });
+                        return;
+                    }
+
+                    const idsDaSalvare = Array.isArray(idTarget)
+                        ? idTarget
+                        : (idTarget ? [idTarget] : (idTorneoAttuale ? [idTorneoAttuale] : Object.keys(dati)));
+
+                    idsDaSalvare.forEach(tId => {
+                        if (dati[tId]) {
+                            torneiDbRef.child(tId).set(JSON.stringify(dati[tId])).catch(err => {
+                                console.warn(`Errore salvataggio Firebase (${tId}):`, err);
+                            });
+                        }
                     });
                 } catch (e) {
                     console.warn("Errore durante la serializzazione Firebase:", e);
@@ -1428,7 +1466,24 @@
                     onConfirm: (ok) => {
                         if (ok) {
                             delete tornei[id];
-                            salvaTornei(tornei);
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(tornei));
+                            if (isAdmin && torneiDbRef) {
+                                if (isLegacySingleStringOnServer) {
+                                    const pacchetti = {};
+                                    for (const k in tornei) {
+                                        if (tornei[k]) pacchetti[k] = JSON.stringify(tornei[k]);
+                                    }
+                                    torneiDbRef.set(Object.keys(pacchetti).length > 0 ? pacchetti : null).then(() => {
+                                        isLegacySingleStringOnServer = false;
+                                    }).catch(err => {
+                                        console.warn("Errore eliminazione Firebase:", err);
+                                    });
+                                } else {
+                                    torneiDbRef.child(id).remove().catch(err => {
+                                        console.warn(`Errore eliminazione Firebase (${id}):`, err);
+                                    });
+                                }
+                            }
                             if (idTorneoAttuale === id) {
                                 idTorneoAttuale = null;
                             }
@@ -1481,7 +1536,7 @@
 
                     const tornei = getTornei();
                     Object.assign(tornei, toImport);
-                    salvaTornei(tornei);
+                    salvaTornei(tornei, Object.keys(toImport));
                     aggiornaListaLobby();
                     showModal({ type: 'alert', title: 'Completato', message: `${numTornei} torneo/i importati e sincronizzati.` });
                 } catch (err) {
@@ -1536,7 +1591,7 @@
                 eliminazione: null,
                 gironiData: null
             };
-            salvaTornei(tornei);
+            salvaTornei(tornei, id);
             apriSetup(id);
         }
 
