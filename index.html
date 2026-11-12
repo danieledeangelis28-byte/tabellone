@@ -89,6 +89,7 @@
             box-shadow: var(--shadow-lg);
             width: 100%;
             max-width: 520px;
+            box-sizing: border-box;
             transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .container.wide { max-width: 880px; }
@@ -527,6 +528,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
             box-shadow: var(--shadow-sm);
         }
         .banner-all-completed {
@@ -539,6 +542,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
             color: #047857;
             font-weight: 700;
             box-shadow: var(--shadow-sm);
@@ -546,9 +551,10 @@
         .gironi-dashboard {
             /* Now hosts just one grid element at a time, but keeping structure */
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
             gap: 25px;
             margin-top: 10px;
+            width: 100%;
         }
         .girone-card {
             background: #ffffff;
@@ -556,11 +562,16 @@
             border-radius: 12px;
             padding: 20px;
             box-shadow: var(--shadow-md);
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
         }
         .girone-card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
             margin-bottom: 14px;
             padding-bottom: 12px;
             border-bottom: 2px solid #f1f5f9;
@@ -580,21 +591,27 @@
             font-weight: 600;
         }
         
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 18px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
         .ranking-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
             font-size: 14px;
-            margin-bottom: 18px;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
+            margin-bottom: 0;
         }
         .ranking-table th, .ranking-table td {
             padding: 9px 10px;
             text-align: center;
             border-bottom: 1px solid var(--border-light);
             font-variant-numeric: tabular-nums;
+            white-space: nowrap;
         }
         .ranking-table th {
             background-color: #0f172a;
@@ -656,6 +673,9 @@
             flex-direction: column;
             gap: 4px;
             flex-grow: 1;
+            min-width: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .competitor {
             display: grid;
@@ -852,6 +872,22 @@
         body.is-admin .admin-only { display: block !important; }
         body.is-admin .admin-only-inline { display: inline-block !important; }
         body.is-admin .admin-only-flex { display: flex !important; }
+
+        /* Adattamento Gironi su Telefono in Verticale */
+        @media (max-width: 600px) {
+            body {
+                padding: 12px 8px;
+            }
+            .container {
+                padding: 18px 14px;
+            }
+            .container.fullscreen {
+                max-width: 100%;
+            }
+            .girone-card {
+                padding: 14px 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -2309,6 +2345,7 @@
             }
 
             html += `
+                <div class="table-responsive">
                 <table class="ranking-table">
                     <thead>
                         <tr>
@@ -2352,6 +2389,7 @@
             html += `
                     </tbody>
                 </table>
+                </div>
 
                 <label style="font-family: var(--font-display); font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; display: block; color: var(--navy-surface);">Partite Registrate (${gruppo.partite.length}):</label>
                 <div class="matches-history">
