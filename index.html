@@ -481,6 +481,41 @@
             text-shadow: 0 2px 8px rgba(251, 191, 36, 0.4);
         }
 
+        /* Gironi Dashboard Tabs */
+        .gironi-tabs-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--border-light);
+        }
+        .girone-tab {
+            padding: 10px 20px;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .girone-tab:hover {
+            color: var(--primary);
+            background: rgba(29, 78, 216, 0.05);
+            border-radius: 6px 6px 0 0;
+        }
+        .girone-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
         /* Gironi Dashboard */
         .banner-mista {
             background: linear-gradient(90deg, #faf5ff 0%, #ffffff 100%);
@@ -509,10 +544,11 @@
             box-shadow: var(--shadow-sm);
         }
         .gironi-dashboard {
+            /* Now hosts just one grid element at a time, but keeping structure */
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
             gap: 25px;
-            margin-top: 22px;
+            margin-top: 10px;
         }
         .girone-card {
             background: #ffffff;
@@ -572,7 +608,10 @@
         }
         .ranking-table td:nth-child(2), .ranking-table th:nth-child(2) { text-align: left; }
         .ranking-table tbody tr:last-child td { border-bottom: none; }
-        .ranking-table tbody tr:hover td { background-color: #f8fafc; }
+        .ranking-table tbody tr { transition: background-color 0.15s; }
+        .ranking-table tbody tr.clickable-row { cursor: pointer; }
+        .ranking-table tbody tr.clickable-row:hover { background-color: #f1f5f9; }
+        .ranking-table tbody tr.clickable-row:hover td { background-color: transparent; }
 
         .matches-history { max-height: 250px; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 14px; }
         
@@ -619,50 +658,53 @@
             flex-grow: 1;
         }
         .competitor {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1fr 40px auto;
             align-items: center;
+            gap: 12px;
             font-size: 14px;
             padding: 6px 12px;
             border-radius: 6px;
             background-color: #f8fafc;
             border: 1px solid #f1f5f9;
         }
+        .competitor.clickable-competitor {
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .competitor.clickable-competitor:hover {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        .competitor:not(.has-scores) {
+            grid-template-columns: 1fr auto;
+        }
         .competitor.winner {
             background-color: #ecfdf5;
             border-color: #d1fae5;
             border-left: 4px solid var(--secondary);
         }
+        .competitor.clickable-competitor.winner:hover {
+            background-color: #d1fae5;
+            border-color: #a7f3d0;
+        }
         .competitor.loser {
             border-left: 4px solid #cbd5e1;
             color: #64748b;
         }
-        .competitor .name { font-weight: 600; color: #1e293b; }
+        .competitor .name { font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .competitor.winner .name { color: #047857; font-weight: 700; }
 
-        .match-competitors.has-scores {
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: 4px;
-        }
-        .match-competitors.has-scores .competitor {
-            display: grid;
-            grid-template-columns: subgrid;
-            grid-column: 1 / -1;
-            align-items: center;
-            gap: 12px;
-        }
         .match-score {
             font-family: var(--font-display);
             font-weight: 800;
             font-size: 18px;
             color: var(--navy-surface);
-            min-width: 28px;
             text-align: center;
             background: #ffffff;
             border: 1px solid #cbd5e1;
             border-radius: 4px;
-            padding: 1px 6px;
+            padding: 1px 0;
             font-variant-numeric: tabular-nums;
         }
         .competitor.winner .match-score {
@@ -679,7 +721,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             justify-content: flex-end;
             font-size: 12px;
         }
@@ -694,6 +736,7 @@
             line-height: 1.2;
             letter-spacing: 0.05em;
             text-transform: uppercase;
+            white-space: nowrap;
         }
         .meta-badge.outcome-win { background-color: #059669; color: #ffffff; }
         .meta-badge.outcome-loss { background-color: #e2e8f0; color: #475569; }
@@ -725,8 +768,8 @@
             border-radius: 12px;
             width: 90%;
             max-width: 410px;
-            max-height: 90vh; /* NUOVO: Limita l'altezza della modale */
-            overflow-y: auto; /* NUOVO: Aggiunge la scrollbar se necessario */
+            max-height: 90vh; /* Limita l'altezza della modale */
+            overflow-y: auto; /* Aggiunge la scrollbar se necessario */
             text-align: center;
             box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.35);
             border: 1px solid var(--border-color);
@@ -991,6 +1034,8 @@
         <div id="banner-all-completed" class="banner-all-completed" style="display:none;">
             <span>🎉 <strong>Tutte le partite previste per i gironi sono state completate!</strong></span>
         </div>
+        
+        <div id="gironi-tabs" class="gironi-tabs-container" style="display:none;"></div>
 
         <div id="gironi-container" class="gironi-dashboard"></div>
     </div>
@@ -1083,6 +1128,23 @@
         </div>
     </div>
 
+    <!-- MODAL SCHEDA INCONTRI DEL GIOCATORE (SCORREVOLE) -->
+    <div id="player-matches-modal" class="modal-overlay" onclick="if(event.target === this) chiudiModalGiocatore()">
+        <div class="modal-box" style="text-align: left; max-width: 480px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="header-flex" style="margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">
+                <div>
+                    <h3 id="player-modal-name" style="margin: 0; color: var(--navy-surface);">Nome Giocatore</h3>
+                    <small id="player-modal-sub" style="color: var(--text-muted); font-size: 13px;">Calendario Incontri Girone</small>
+                </div>
+                <button class="action-icon-btn" onclick="chiudiModalGiocatore()" style="font-size: 18px; color: var(--text-muted);">✖</button>
+            </div>
+            <div id="player-modal-matches-list" style="overflow-y: auto; max-height: 60vh; padding-right: 5px; display: flex; flex-direction: column; gap: 12px;"></div>
+            <div style="margin-top: 16px;">
+                <button class="modal-btn modal-btn-cancel" style="width: 100%;" onclick="chiudiModalGiocatore()">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL SCELTA QUALIFICATI -->
     <div id="qualificati-modal" class="modal-overlay">
         <div class="modal-box" style="text-align: center; max-width: 400px;">
@@ -1123,16 +1185,14 @@
 
     <script>
         const STORAGE_KEY = 'miei_tornei';
-        // Incolla qui la stringa di 64 caratteri generata al Passo 1
-const ADMIN_HASH = 'e8a34d43691d2cf0e61c5300272d414e9995299196e67828d0bc3465cffb77d8';
+        const ADMIN_HASH = 'e8a34d43691d2cf0e61c5300272d414e9995299196e67828d0bc3465cffb77d8';
 
-// Funzione nativa per calcolare l'hash di ciò che viene digitato nel pop-up
-async function calcolaHashSHA256(testo) {
-    const buffer = new TextEncoder().encode(testo);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
+        async function calcolaHashSHA256(testo) {
+            const buffer = new TextEncoder().encode(testo);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
 
         // --- CONFIGURAZIONE FIREBASE ---
         const firebaseConfig = {
@@ -1158,6 +1218,7 @@ async function calcolaHashSHA256(testo) {
         let isAdmin = false;
         let idTorneoAttuale = null;
         let gironeAttivoIndex = null;
+        let activeTabGroupIndex = 0;
         let draggedPlayer = null;
         let draggedFromGroupIndex = null;
         let numeroQualificatiSelezionato = 4;
@@ -1248,27 +1309,27 @@ async function calcolaHashSHA256(testo) {
         }
 
         function chiediAccessoAdmin(onSuccess) {
-    showModal({
-        type: 'prompt',
-        title: 'Accesso Gestore',
-        message: 'Inserisci la password per abilitare le modifiche:',
-        onConfirm: async (passwordInserita) => {
-            const hashInserito = await calcolaHashSHA256(passwordInserita);
-            if (hashInserito === ADMIN_HASH) {
-                impostaRuoloAdmin(true);
-                if (typeof onSuccess === 'function') {
-                    onSuccess();
-                } else {
-                    showModal({ type: 'alert', title: 'Benvenuto', message: 'Modalità Gestore attivata.' });
+            showModal({
+                type: 'prompt',
+                title: 'Accesso Gestore',
+                message: 'Inserisci la password per abilitare le modifiche:',
+                onConfirm: async (passwordInserita) => {
+                    const hashInserito = await calcolaHashSHA256(passwordInserita);
+                    if (hashInserito === ADMIN_HASH) {
+                        impostaRuoloAdmin(true);
+                        if (typeof onSuccess === 'function') {
+                            onSuccess();
+                        } else {
+                            showModal({ type: 'alert', title: 'Benvenuto', message: 'Modalità Gestore attivata.' });
+                        }
+                    } else {
+                        showModal({ type: 'alert', title: 'Accesso Negato', message: 'Password errata.' });
+                    }
                 }
-            } else {
-                showModal({ type: 'alert', title: 'Accesso Negato', message: 'Password errata.' });
-            }
+            });
+            document.getElementById('modal-input').type = 'password';
+            document.getElementById('modal-input').value = '';
         }
-    });
-    document.getElementById('modal-input').type = 'password';
-    document.getElementById('modal-input').value = '';
-}
 
         function logoutAdmin() {
             impostaRuoloAdmin(false);
@@ -1525,10 +1586,14 @@ async function calcolaHashSHA256(testo) {
                 if (t.modalita === 'diretta') {
                     apriTabelloneDiretta(id);
                 } else if (t.modalita === 'gironi') {
+                    activeTabGroupIndex = 0;
                     apriGironiDashboard(id);
                 } else if (t.modalita === 'mista') {
                     if (t.eliminazione) apriTabelloneDiretta(id);
-                    else apriGironiDashboard(id);
+                    else {
+                        activeTabGroupIndex = 0;
+                        apriGironiDashboard(id);
+                    }
                 }
             } else {
                 if (isAdmin) {
@@ -1882,6 +1947,11 @@ async function calcolaHashSHA256(testo) {
             cambiaVista('view-gironi-dashboard');
         }
 
+        function switchGironeTab(gIdx) {
+            activeTabGroupIndex = gIdx;
+            renderizzaGironiDashboard();
+        }
+
         function aggiornaBannerMista(torneo) {
             const bannerMista = document.getElementById('banner-mista-container');
             const btnPassaEliminazione = document.getElementById('btn-passa-eliminazione');
@@ -1986,12 +2056,33 @@ async function calcolaHashSHA256(testo) {
 
             aggiornaBannerMista(torneo);
 
+            const tabsContainer = document.getElementById('gironi-tabs');
             const container = document.getElementById('gironi-container');
             container.innerHTML = '';
+            
+            const numGironi = torneo.gironiData.gruppi.length;
+            
+            // Build Tabs if more than 1 group
+            if (numGironi > 1) {
+                tabsContainer.style.display = 'flex';
+                tabsContainer.innerHTML = '';
+                torneo.gironiData.gruppi.forEach((g, idx) => {
+                    const tab = document.createElement('button');
+                    tab.className = 'girone-tab' + (idx === activeTabGroupIndex ? ' active' : '');
+                    tab.textContent = g.nome;
+                    tab.onclick = () => switchGironeTab(idx);
+                    tabsContainer.appendChild(tab);
+                });
+            } else {
+                tabsContainer.style.display = 'none';
+                activeTabGroupIndex = 0;
+            }
+
+            // Fallback for activeTabGroupIndex if somehow out of bounds
+            if (activeTabGroupIndex >= numGironi) activeTabGroupIndex = 0;
 
             const turniPrevisti = torneo.gironiData.turniGirone || torneo.turniGirone || 1;
-            let tuttiIGironiDelTorneoCompletati = true;
-
+            
             const ptsWin = (torneo.puntiVittoria !== undefined) ? Number(torneo.puntiVittoria) : 3;
             const ptsDraw = (torneo.puntiPareggio !== undefined) ? Number(torneo.puntiPareggio) : 1;
             const ptsLoss = (torneo.puntiSconfitta !== undefined) ? Number(torneo.puntiSconfitta) : 0;
@@ -2001,244 +2092,260 @@ async function calcolaHashSHA256(testo) {
             const hasPenalita = Boolean(torneo.abilitaPenalita);
             const criterio = torneo.criterioParimerito || 'scontri_diretti';
 
-            torneo.gironiData.gruppi.forEach((gruppo, gIdx) => {
-                const numPartecipanti = gruppo.partecipanti.length;
-                const partiteTargetPerGiocatore = (numPartecipanti - 1) * turniPrevisti;
-
+            // Check if ALL groups in tournament are completed for the global banner
+            let tuttiIGironiDelTorneoCompletati = true;
+            torneo.gironiData.gruppi.forEach(g => {
+                const target = (g.partecipanti.length - 1) * turniPrevisti;
                 const stats = {};
-                gruppo.partecipanti.forEach(p => {
-                    stats[p] = { nome: p, pg: 0, v: 0, p: 0, s: 0, pt: 0, puntiRimasti: 0, puntiFatti: 0, puntiSubiti: 0, penalita: 0 };
+                g.partecipanti.forEach(p => stats[p] = 0);
+                g.partite.forEach(m => {
+                    if(stats[m.p1] !== undefined) stats[m.p1]++;
+                    if(stats[m.p2] !== undefined) stats[m.p2]++;
                 });
+                if(g.partecipanti.length > 1 && !Object.values(stats).every(pg => pg >= target)) {
+                    tuttiIGironiDelTorneoCompletati = false;
+                }
+            });
 
-                gruppo.partite.forEach(partita => {
-                    const isDraw = partita.isPareggio || partita.vincitore === '__DRAW__';
-                    const s1 = (partita.scoreP1 !== undefined && partita.scoreP1 !== null) ? Number(partita.scoreP1) : null;
-                    const s2 = (partita.scoreP2 !== undefined && partita.scoreP2 !== null) ? Number(partita.scoreP2) : null;
+            // Render Only the Active Group
+            const gruppo = torneo.gironiData.gruppi[activeTabGroupIndex];
+            const gIdx = activeTabGroupIndex;
 
-                    if (isDraw) {
+            const numPartecipanti = gruppo.partecipanti.length;
+            const partiteTargetPerGiocatore = (numPartecipanti - 1) * turniPrevisti;
+
+            const stats = {};
+            gruppo.partecipanti.forEach(p => {
+                stats[p] = { nome: p, pg: 0, v: 0, p: 0, s: 0, pt: 0, puntiRimasti: 0, puntiFatti: 0, puntiSubiti: 0, penalita: 0 };
+            });
+
+            gruppo.partite.forEach(partita => {
+                const isDraw = partita.isPareggio || partita.vincitore === '__DRAW__';
+                const s1 = (partita.scoreP1 !== undefined && partita.scoreP1 !== null) ? Number(partita.scoreP1) : null;
+                const s2 = (partita.scoreP2 !== undefined && partita.scoreP2 !== null) ? Number(partita.scoreP2) : null;
+
+                if (isDraw) {
+                    if (stats[partita.p1]) {
+                        stats[partita.p1].pg += 1;
+                        stats[partita.p1].p += 1;
+                        stats[partita.p1].pt += ptsDraw;
+                        if (hasPuntiFatti && s1 !== null && s2 !== null) {
+                            stats[partita.p1].puntiFatti += s1;
+                            stats[partita.p1].puntiSubiti += s2;
+                        }
+                    }
+                    if (stats[partita.p2]) {
+                        stats[partita.p2].pg += 1;
+                        stats[partita.p2].p += 1;
+                        stats[partita.p2].pt += ptsDraw;
+                        if (hasPuntiFatti && s1 !== null && s2 !== null) {
+                            stats[partita.p2].puntiFatti += s2;
+                            stats[partita.p2].puntiSubiti += s1;
+                        }
+                    }
+                } else {
+                    if (stats[partita.vincitore]) {
+                        stats[partita.vincitore].pg += 1;
+                        stats[partita.vincitore].v += 1;
+                        stats[partita.vincitore].pt += ptsWin;
+                        if (hasPuntiFatti && s1 !== null && s2 !== null) {
+                            const winScore = (partita.vincitore === partita.p1) ? s1 : s2;
+                            const loseScore = (partita.vincitore === partita.p1) ? s2 : s1;
+                            stats[partita.vincitore].puntiFatti += winScore;
+                            stats[partita.vincitore].puntiSubiti += loseScore;
+                        }
+                    }
+                    if (stats[partita.perdente]) {
+                        stats[partita.perdente].pg += 1;
+                        stats[partita.perdente].s += 1;
+                        stats[partita.perdente].pt += ptsLoss;
+                        if (hasPuntiFatti && s1 !== null && s2 !== null) {
+                            const winScore = (partita.vincitore === partita.p1) ? s1 : s2;
+                            const loseScore = (partita.vincitore === partita.p1) ? s2 : s1;
+                            stats[partita.perdente].puntiFatti += loseScore;
+                            stats[partita.perdente].puntiSubiti += winScore;
+                        }
+                        if (hasPuntiRimasti) {
+                            stats[partita.perdente].puntiRimasti += Number(partita.puntiPerdente || 0);
+                        }
+                    }
+                }
+
+                // Sottrazione Penalità Punti
+                if (hasPenalita && partita.puntiPenalita && partita.penalitaGiocatore) {
+                    const pPts = Number(partita.puntiPenalita) || 0;
+                    if (partita.penalitaGiocatore === '__BOTH__') {
                         if (stats[partita.p1]) {
-                            stats[partita.p1].pg += 1;
-                            stats[partita.p1].p += 1;
-                            stats[partita.p1].pt += ptsDraw;
-                            if (hasPuntiFatti && s1 !== null && s2 !== null) {
-                                stats[partita.p1].puntiFatti += s1;
-                                stats[partita.p1].puntiSubiti += s2;
-                            }
+                            stats[partita.p1].penalita += pPts;
+                            stats[partita.p1].pt -= pPts;
                         }
                         if (stats[partita.p2]) {
-                            stats[partita.p2].pg += 1;
-                            stats[partita.p2].p += 1;
-                            stats[partita.p2].pt += ptsDraw;
-                            if (hasPuntiFatti && s1 !== null && s2 !== null) {
-                                stats[partita.p2].puntiFatti += s2;
-                                stats[partita.p2].puntiSubiti += s1;
-                            }
+                            stats[partita.p2].penalita += pPts;
+                            stats[partita.p2].pt -= pPts;
                         }
-                    } else {
-                        if (stats[partita.vincitore]) {
-                            stats[partita.vincitore].pg += 1;
-                            stats[partita.vincitore].v += 1;
-                            stats[partita.vincitore].pt += ptsWin;
-                            if (hasPuntiFatti && s1 !== null && s2 !== null) {
-                                const winScore = (partita.vincitore === partita.p1) ? s1 : s2;
-                                const loseScore = (partita.vincitore === partita.p1) ? s2 : s1;
-                                stats[partita.vincitore].puntiFatti += winScore;
-                                stats[partita.vincitore].puntiSubiti += loseScore;
-                            }
-                        }
-                        if (stats[partita.perdente]) {
-                            stats[partita.perdente].pg += 1;
-                            stats[partita.perdente].s += 1;
-                            stats[partita.perdente].pt += ptsLoss;
-                            if (hasPuntiFatti && s1 !== null && s2 !== null) {
-                                const winScore = (partita.vincitore === partita.p1) ? s1 : s2;
-                                const loseScore = (partita.vincitore === partita.p1) ? s2 : s1;
-                                stats[partita.perdente].puntiFatti += loseScore;
-                                stats[partita.perdente].puntiSubiti += winScore;
-                            }
-                            if (hasPuntiRimasti) {
-                                stats[partita.perdente].puntiRimasti += Number(partita.puntiPerdente || 0);
-                            }
-                        }
+                    } else if (stats[partita.penalitaGiocatore]) {
+                        stats[partita.penalitaGiocatore].penalita += pPts;
+                        stats[partita.penalitaGiocatore].pt -= pPts;
                     }
+                }
+            });
 
-                    // Sottrazione Penalità Punti
-                    if (hasPenalita && partita.puntiPenalita && partita.penalitaGiocatore) {
-                        const pPts = Number(partita.puntiPenalita) || 0;
-                        if (partita.penalitaGiocatore === '__BOTH__') {
-                            if (stats[partita.p1]) {
-                                stats[partita.p1].penalita += pPts;
-                                stats[partita.p1].pt -= pPts;
-                            }
-                            if (stats[partita.p2]) {
-                                stats[partita.p2].penalita += pPts;
-                                stats[partita.p2].pt -= pPts;
-                            }
-                        } else if (stats[partita.penalitaGiocatore]) {
-                            stats[partita.penalitaGiocatore].penalita += pPts;
-                            stats[partita.penalitaGiocatore].pt -= pPts;
-                        }
-                    }
-                });
+            const gironeCompletato = numPartecipanti > 1 && Object.values(stats).every(s => s.pg >= partiteTargetPerGiocatore);
 
-                const gironeCompletato = numPartecipanti > 1 && Object.values(stats).every(s => s.pg >= partiteTargetPerGiocatore);
-                if (!gironeCompletato) tuttiIGironiDelTorneoCompletati = false;
+            const classifica = ordinaClassifica(Object.values(stats), gruppo.partite, criterio, hasPuntiRimasti, hasPuntiFatti);
 
-                const classifica = ordinaClassifica(Object.values(stats), gruppo.partite, criterio, hasPuntiRimasti, hasPuntiFatti);
+            const card = document.createElement('div');
+            card.className = 'girone-card';
 
-                const card = document.createElement('div');
-                card.className = 'girone-card';
+            let html = `
+                <div class="girone-card-header">
+                    <h3>${gruppo.nome}</h3>
+                    ${isAdmin ? `<button class="btn btn-secondary btn-sm" onclick="apriModalRegistraPartita(${gIdx})">➕ Registra Partita</button>` : ''}
+                </div>
+            `;
 
-                let html = `
-                    <div class="girone-card-header">
-                        <h3>${gruppo.nome}</h3>
-                        ${isAdmin ? `<button class="btn btn-secondary btn-sm" onclick="apriModalRegistraPartita(${gIdx})">➕ Registra Partita</button>` : ''}
+            if (gironeCompletato) {
+                html += `
+                    <div class="girone-alert-completed">
+                        🔔 <strong>Tutti i giocatori hanno giocato le partite previste per questo girone!</strong>
                     </div>
                 `;
+            }
 
-                if (gironeCompletato) {
-                    html += `
-                        <div class="girone-alert-completed">
-                            🔔 <strong>Tutti i giocatori hanno giocato le partite previste per questo girone!</strong>
-                        </div>
-                    `;
-                }
-
-                html += `
-                    <table class="ranking-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Giocatore</th>
-                                <th style="color: #60a5fa;">Pt</th>
-                                <th>PG</th>
-                                <th>V</th>
-                                ${hasDraw ? '<th>P</th>' : ''}
-                                <th>S</th>
-                                ${hasPuntiFatti ? '<th>PF</th><th>PS</th><th>Diff</th>' : ''}
-                                ${hasPuntiRimasti ? '<th>Punti Rimasti</th>' : ''}
-                                ${hasPenalita ? '<th>Pen</th>' : ''}
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-
-                classifica.forEach((gioc, index) => {
-                    const targetRaggiunto = gioc.pg >= partiteTargetPerGiocatore;
-                    const diff = gioc.puntiFatti - gioc.puntiSubiti;
-                    const diffTxt = diff > 0 ? `+${diff}` : `${diff}`;
-                    const diffColor = diff > 0 ? '#047857' : (diff < 0 ? '#b91c1c' : '#64748b');
-
-                    html += `
+            html += `
+                <table class="ranking-table">
+                    <thead>
                         <tr>
-                            <td><strong>${index + 1}</strong></td>
-                            <td><strong>${gioc.nome}</strong></td>
-                            <td><span style="color:var(--primary); font-weight:800; font-size:16px;">${gioc.pt}</span></td>
-                            <td>${gioc.pg} ${targetRaggiunto ? '<small style="color:#047857; font-weight:bold;">✔</small>' : ''}</td>
-                            <td><span style="color:#047857; font-weight:700;">${gioc.v}</span></td>
-                            ${hasDraw ? `<td><span style="color:#b45309; font-weight:700;">${gioc.p}</span></td>` : ''}
-                            <td><span style="color:#64748b; font-weight:600;">${gioc.s}</span></td>
-                            ${hasPuntiFatti ? `<td>${gioc.puntiFatti}</td><td>${gioc.puntiSubiti}</td><td style="font-weight:700; color:${diffColor};">${diffTxt}</td>` : ''}
-                            ${hasPuntiRimasti ? `<td>${gioc.puntiRimasti}</td>` : ''}
-                            ${hasPenalita ? `<td><span style="color:var(--danger); font-weight:700;">${gioc.penalita > 0 ? '-' + gioc.penalita : '0'}</span></td>` : ''}
+                            <th>#</th>
+                            <th>Giocatore</th>
+                            <th style="color: #60a5fa;">Pt</th>
+                            <th>PG</th>
+                            <th>V</th>
+                            ${hasDraw ? '<th>P</th>' : ''}
+                            <th>S</th>
+                            ${hasPuntiFatti ? '<th>PF</th><th>PS</th><th>Diff</th>' : ''}
+                            ${hasPuntiRimasti ? '<th>Punti Rimasti</th>' : ''}
+                            ${hasPenalita ? '<th>Pen</th>' : ''}
                         </tr>
-                    `;
-                });
+                    </thead>
+                    <tbody>
+            `;
+
+            classifica.forEach((gioc, index) => {
+                const targetRaggiunto = gioc.pg >= partiteTargetPerGiocatore;
+                const diff = gioc.puntiFatti - gioc.puntiSubiti;
+                const diffTxt = diff > 0 ? `+${diff}` : `${diff}`;
+                const diffColor = diff > 0 ? '#047857' : (diff < 0 ? '#b91c1c' : '#64748b');
 
                 html += `
-                        </tbody>
-                    </table>
-
-                    <label style="font-family: var(--font-display); font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; display: block; color: var(--navy-surface);">Partite Registrate (${gruppo.partite.length}):</label>
-                    <div class="matches-history">
+                    <tr class="clickable-row" onclick="apriModalSchedaGiocatore(${gIdx}, '${gioc.nome.replace(/'/g, "\\'")}')" title="Clicca per vedere tutte le partite di ${gioc.nome}">
+                        <td><strong>${index + 1}</strong></td>
+                        <td><strong>${gioc.nome}</strong></td>
+                        <td><span style="color:var(--primary); font-weight:800; font-size:16px;">${gioc.pt}</span></td>
+                        <td>${gioc.pg} ${targetRaggiunto ? '<small style="color:#047857; font-weight:bold;">✔</small>' : ''}</td>
+                        <td><span style="color:#047857; font-weight:700;">${gioc.v}</span></td>
+                        ${hasDraw ? `<td><span style="color:#b45309; font-weight:700;">${gioc.p}</span></td>` : ''}
+                        <td><span style="color:#64748b; font-weight:600;">${gioc.s}</span></td>
+                        ${hasPuntiFatti ? `<td>${gioc.puntiFatti}</td><td>${gioc.puntiSubiti}</td><td style="font-weight:700; color:${diffColor};">${diffTxt}</td>` : ''}
+                        ${hasPuntiRimasti ? `<td>${gioc.puntiRimasti}</td>` : ''}
+                        ${hasPenalita ? `<td><span style="color:var(--danger); font-weight:700;">${gioc.penalita > 0 ? '-' + gioc.penalita : '0'}</span></td>` : ''}
+                    </tr>
                 `;
-
-                if (gruppo.partite.length === 0) {
-                    html += `<p style="color:var(--text-muted); font-size:13px; font-style:italic;">Nessuna partita ancora disputata.</p>`;
-                } else {
-                    gruppo.partite.slice().reverse().forEach(partita => {
-                        const isDraw = partita.isPareggio || partita.vincitore === '__DRAW__';
-                        const hasScores = (partita.scoreP1 !== null && partita.scoreP1 !== undefined && partita.scoreP2 !== null && partita.scoreP2 !== undefined);
-                        const showScores = hasPuntiFatti && hasScores;
-                        const dateBadge = partita.data ? `<span class="match-date-tab">📅 ${partita.data}</span>` : '';
-
-                        if (isDraw) {
-                            let metaP1 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
-                            let metaP2 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
-
-                            if (hasPenalita && partita.puntiPenalita && partita.penalitaGiocatore) {
-                                if (partita.penalitaGiocatore === partita.p1 || partita.penalitaGiocatore === '__BOTH__') {
-                                    metaP1 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
-                                }
-                                if (partita.penalitaGiocatore === partita.p2 || partita.penalitaGiocatore === '__BOTH__') {
-                                    metaP2 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
-                                }
-                            }
-
-                            html += `
-                                <div class="match-card-modern">
-                                    ${dateBadge}
-                                    <div class="match-competitors ${showScores ? 'has-scores' : ''}">
-                                        <div class="competitor" style="background-color: #fffbeb; border-left: 4px solid #f59e0b;">
-                                            <span class="name">🤝 ${partita.p1}</span>
-                                            ${showScores ? `<span class="match-score">${partita.scoreP1}</span>` : ''}
-                                            <span class="meta">${metaP1}</span>
-                                        </div>
-                                        <div class="competitor" style="background-color: #fffbeb; border-left: 4px solid #f59e0b;">
-                                            <span class="name">🤝 ${partita.p2}</span>
-                                            ${showScores ? `<span class="match-score">${partita.scoreP2}</span>` : ''}
-                                            <span class="meta">${metaP2}</span>
-                                        </div>
-                                    </div>
-                                    ${isAdmin ? `<div class="match-actions"><button class="action-icon-btn delete" style="color:var(--danger); margin-left: 10px;" onclick="eliminaPartita(${gIdx}, '${partita.id}')" title="Cancella partita">🗑️</button></div>` : ''}
-                                </div>
-                            `;
-                        } else {
-                            const winScore = hasScores ? ((partita.vincitore === partita.p1) ? partita.scoreP1 : partita.scoreP2) : null;
-                            const loseScore = hasScores ? ((partita.vincitore === partita.p1) ? partita.scoreP2 : partita.scoreP1) : null;
-
-                            let metaWinner = `<span class="meta-badge outcome-win">Vittoria </span>`;
-                            let metaLoser = `<span class="meta-badge outcome-loss">Sconfitta</span>`;
-                            if (hasPuntiRimasti) {
-                                const rimasti = (partita.puntiPerdente !== undefined && partita.puntiPerdente !== null) ? partita.puntiPerdente : 0;
-                                metaLoser += `<span class="meta-badge stat-rimasti">Punti rimasti: <strong>${rimasti}</strong></span>`;
-                            }
-
-                            if (hasPenalita && partita.puntiPenalita && partita.penalitaGiocatore) {
-                                if (partita.penalitaGiocatore === partita.vincitore || partita.penalitaGiocatore === '__BOTH__') {
-                                    metaWinner += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
-                                }
-                                if (partita.penalitaGiocatore === partita.perdente || partita.penalitaGiocatore === '__BOTH__') {
-                                    metaLoser += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
-                                }
-                            }
-
-                            html += `
-                                <div class="match-card-modern">
-                                    ${dateBadge}
-                                    <div class="match-competitors ${showScores ? 'has-scores' : ''}">
-                                        <div class="competitor winner">
-                                            <span class="name">🏆 ${partita.vincitore}</span>
-                                            ${showScores ? `<span class="match-score">${winScore}</span>` : ''}
-                                            <span class="meta">${metaWinner}</span>
-                                        </div>
-                                        <div class="competitor loser">
-                                            <span class="name">${partita.perdente}</span>
-                                            ${showScores ? `<span class="match-score">${loseScore}</span>` : ''}
-                                            <span class="meta">${metaLoser}</span>
-                                        </div>
-                                    </div>
-                                    ${isAdmin ? `<div class="match-actions"><button class="action-icon-btn delete" style="color:var(--danger); margin-left: 10px;" onclick="eliminaPartita(${gIdx}, '${partita.id}')" title="Cancella partita">🗑️</button></div>` : ''}
-                                </div>
-                            `;
-                        }
-                    });
-                }
-
-                html += `</div>`;
-                card.innerHTML = html;
-                container.appendChild(card);
             });
+
+            html += `
+                    </tbody>
+                </table>
+
+                <label style="font-family: var(--font-display); font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; display: block; color: var(--navy-surface);">Partite Registrate (${gruppo.partite.length}):</label>
+                <div class="matches-history">
+            `;
+
+            if (gruppo.partite.length === 0) {
+                html += `<p style="color:var(--text-muted); font-size:13px; font-style:italic;">Nessuna partita ancora disputata.</p>`;
+            } else {
+                gruppo.partite.slice().reverse().forEach(partita => {
+                    const isDraw = partita.isPareggio || partita.vincitore === '__DRAW__';
+                    const hasScores = (partita.scoreP1 !== null && partita.scoreP1 !== undefined && partita.scoreP2 !== null && partita.scoreP2 !== undefined);
+                    const showScores = hasPuntiFatti && hasScores;
+                    const dateBadge = partita.data ? `<span class="match-date-tab">📅 ${partita.data}</span>` : '';
+
+                    if (isDraw) {
+                        let metaP1 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
+                        let metaP2 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
+
+                        if (hasPenalita && partita.puntiPenalita && partita.penalitaGiocatore) {
+                            if (partita.penalitaGiocatore === partita.p1 || partita.penalitaGiocatore === '__BOTH__') {
+                                metaP1 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
+                            }
+                            if (partita.penalitaGiocatore === partita.p2 || partita.penalitaGiocatore === '__BOTH__') {
+                                metaP2 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
+                            }
+                        }
+
+                        html += `
+                            <div class="match-card-modern">
+                                ${dateBadge}
+                                <div class="match-competitors ${showScores ? 'has-scores' : ''}">
+                                    <div class="competitor clickable-competitor" style="background-color: #fffbeb; border-left: 4px solid #f59e0b;" onclick="apriModalSchedaGiocatore(${gIdx}, '${partita.p1.replace(/'/g, "\\'")}')" title="Vedi incontri di ${partita.p1}">
+                                        <span class="name">🤝 ${partita.p1}</span>
+                                        ${showScores ? `<span class="match-score">${partita.scoreP1}</span>` : ''}
+                                        <span class="meta">${metaP1}</span>
+                                    </div>
+                                    <div class="competitor clickable-competitor" style="background-color: #fffbeb; border-left: 4px solid #f59e0b;" onclick="apriModalSchedaGiocatore(${gIdx}, '${partita.p2.replace(/'/g, "\\'")}')" title="Vedi incontri di ${partita.p2}">
+                                        <span class="name">🤝 ${partita.p2}</span>
+                                        ${showScores ? `<span class="match-score">${partita.scoreP2}</span>` : ''}
+                                        <span class="meta">${metaP2}</span>
+                                    </div>
+                                </div>
+                                ${isAdmin ? `<div class="match-actions"><button class="action-icon-btn delete" style="color:var(--danger); margin-left: 10px;" onclick="eliminaPartita(${gIdx}, '${partita.id}')" title="Cancella partita">🗑️</button></div>` : ''}
+                            </div>
+                        `;
+                    } else {
+                        const winScore = hasScores ? ((partita.vincitore === partita.p1) ? partita.scoreP1 : partita.scoreP2) : null;
+                        const loseScore = hasScores ? ((partita.vincitore === partita.p1) ? partita.scoreP2 : partita.scoreP1) : null;
+
+                        let metaWinner = `<span class="meta-badge outcome-win">Vittoria </span>`;
+                        let metaLoser = `<span class="meta-badge outcome-loss">Sconfitta</span>`;
+                        if (hasPuntiRimasti) {
+                            const rimasti = (partita.puntiPerdente !== undefined && partita.puntiPerdente !== null) ? partita.puntiPerdente : 0;
+                            metaLoser += `<span class="meta-badge stat-rimasti">Punti rimasti: <strong>${rimasti}</strong></span>`;
+                        }
+
+                        if (hasPenalita && partita.puntiPenalita && partita.penalitaGiocatore) {
+                            if (partita.penalitaGiocatore === partita.vincitore || partita.penalitaGiocatore === '__BOTH__') {
+                                metaWinner += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
+                            }
+                            if (partita.penalitaGiocatore === partita.perdente || partita.penalitaGiocatore === '__BOTH__') {
+                                metaLoser += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${partita.puntiPenalita} pt</span>`;
+                            }
+                        }
+
+                        html += `
+                            <div class="match-card-modern">
+                                ${dateBadge}
+                                <div class="match-competitors ${showScores ? 'has-scores' : ''}">
+                                    <div class="competitor clickable-competitor winner" onclick="apriModalSchedaGiocatore(${gIdx}, '${partita.vincitore.replace(/'/g, "\\'")}')" title="Vedi incontri di ${partita.vincitore}">
+                                        <span class="name">🏆 ${partita.vincitore}</span>
+                                        ${showScores ? `<span class="match-score">${winScore}</span>` : ''}
+                                        <span class="meta">${metaWinner}</span>
+                                    </div>
+                                    <div class="competitor clickable-competitor loser" onclick="apriModalSchedaGiocatore(${gIdx}, '${partita.perdente.replace(/'/g, "\\'")}')" title="Vedi incontri di ${partita.perdente}">
+                                        <span class="name">${partita.perdente}</span>
+                                        ${showScores ? `<span class="match-score">${loseScore}</span>` : ''}
+                                        <span class="meta">${metaLoser}</span>
+                                    </div>
+                                </div>
+                                ${isAdmin ? `<div class="match-actions"><button class="action-icon-btn delete" style="color:var(--danger); margin-left: 10px;" onclick="eliminaPartita(${gIdx}, '${partita.id}')" title="Cancella partita">🗑️</button></div>` : ''}
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            html += `</div>`;
+            card.innerHTML = html;
+            container.appendChild(card);
 
             const bannerAll = document.getElementById('banner-all-completed');
             if (tuttiIGironiDelTorneoCompletati && torneo.gironiData.gruppi.length > 0) {
@@ -2246,6 +2353,147 @@ async function calcolaHashSHA256(testo) {
             } else {
                 bannerAll.style.display = 'none';
             }
+        }
+
+        // --- SCHEDA INCONTRI GIOCATORE GIRONE (POP-UP SCORREVOLE) ---
+        function apriModalSchedaGiocatore(gIdx, playerName) {
+            const torneo = getTornei()[idTorneoAttuale];
+            if (!torneo || !torneo.gironiData || !torneo.gironiData.gruppi[gIdx]) return;
+            const gruppo = torneo.gironiData.gruppi[gIdx];
+
+            document.getElementById('player-modal-name').textContent = playerName;
+            document.getElementById('player-modal-sub').textContent = `${gruppo.nome} • Calendario Incontri`;
+
+            const container = document.getElementById('player-modal-matches-list');
+            container.innerHTML = '';
+
+            const turniPrevisti = torneo.gironiData.turniGirone || torneo.turniGirone || 1;
+            const opponents = gruppo.partecipanti.filter(p => p !== playerName);
+            const hasPuntiFatti = Boolean(torneo.segnaPuntiFatti);
+            const hasPuntiRimasti = Boolean(torneo.contaPuntiRimasti);
+            const hasPenalita = Boolean(torneo.abilitaPenalita);
+
+            if (opponents.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted); font-size:13px; font-style:italic;">Nessun altro partecipante nel girone.</p>';
+                document.getElementById('player-matches-modal').style.display = 'flex';
+                return;
+            }
+
+            for (let t = 1; t <= turniPrevisti; t++) {
+                if (turniPrevisti > 1) {
+                    const header = document.createElement('div');
+                    header.style.cssText = 'font-family: var(--font-display); font-weight: 800; font-size: 13px; text-transform: uppercase; color: var(--navy-surface); margin-top: 8px; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 2px;';
+                    header.textContent = `Turno / Scontro ${t}`;
+                    container.appendChild(header);
+                }
+
+                opponents.forEach(opp => {
+                    const matchesBetween = gruppo.partite.filter(m => 
+                        (m.p1 === playerName && m.p2 === opp) || (m.p1 === opp && m.p2 === playerName)
+                    );
+                    const match = matchesBetween[t - 1];
+
+                    if (match) {
+                        const isDraw = match.isPareggio || match.vincitore === '__DRAW__';
+                        const hasScores = (match.scoreP1 !== null && match.scoreP1 !== undefined && match.scoreP2 !== null && match.scoreP2 !== undefined);
+                        const showScores = hasPuntiFatti && hasScores;
+                        const dateBadge = match.data ? `<span class="match-date-tab">📅 ${match.data}</span>` : `<span class="match-date-tab">✔ Disputata</span>`;
+
+                        const card = document.createElement('div');
+                        card.className = 'match-card-modern';
+
+                        if (isDraw) {
+                            let metaP1 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
+                            let metaP2 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
+
+                            if (hasPenalita && match.puntiPenalita && match.penalitaGiocatore) {
+                                if (match.penalitaGiocatore === match.p1 || match.penalitaGiocatore === '__BOTH__') {
+                                    metaP1 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt</span>`;
+                                }
+                                if (match.penalitaGiocatore === match.p2 || match.penalitaGiocatore === '__BOTH__') {
+                                    metaP2 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt</span>`;
+                                }
+                            }
+
+                            card.innerHTML = `
+                                ${dateBadge}
+                                <div class="match-competitors ${showScores ? 'has-scores' : ''}">
+                                    <div class="competitor" style="background-color: #fffbeb; border-left: 4px solid #f59e0b;">
+                                        <span class="name">🤝 ${match.p1}</span>
+                                        ${showScores ? `<span class="match-score">${match.scoreP1}</span>` : ''}
+                                        <span class="meta">${metaP1}</span>
+                                    </div>
+                                    <div class="competitor" style="background-color: #fffbeb; border-left: 4px solid #f59e0b;">
+                                        <span class="name">🤝 ${match.p2}</span>
+                                        ${showScores ? `<span class="match-score">${match.scoreP2}</span>` : ''}
+                                        <span class="meta">${metaP2}</span>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            const winScore = hasScores ? ((match.vincitore === match.p1) ? match.scoreP1 : match.scoreP2) : null;
+                            const loseScore = hasScores ? ((match.vincitore === match.p1) ? match.scoreP2 : match.scoreP1) : null;
+
+                            let metaWinner = `<span class="meta-badge outcome-win">Vittoria </span>`;
+                            let metaLoser = `<span class="meta-badge outcome-loss">Sconfitta</span>`;
+                            if (hasPuntiRimasti) {
+                                const rimasti = (match.puntiPerdente !== undefined && match.puntiPerdente !== null) ? match.puntiPerdente : 0;
+                                metaLoser += `<span class="meta-badge stat-rimasti">Punti rimasti: <strong>${rimasti}</strong></span>`;
+                            }
+
+                            if (hasPenalita && match.puntiPenalita && match.penalitaGiocatore) {
+                                if (match.penalitaGiocatore === match.vincitore || match.penalitaGiocatore === '__BOTH__') {
+                                    metaWinner += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt</span>`;
+                                }
+                                if (match.penalitaGiocatore === match.perdente || match.penalitaGiocatore === '__BOTH__') {
+                                    metaLoser += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt</span>`;
+                                }
+                            }
+
+                            card.innerHTML = `
+                                ${dateBadge}
+                                <div class="match-competitors ${showScores ? 'has-scores' : ''}">
+                                    <div class="competitor winner">
+                                        <span class="name">🏆 ${match.vincitore}</span>
+                                        ${showScores ? `<span class="match-score">${winScore}</span>` : ''}
+                                        <span class="meta">${metaWinner}</span>
+                                    </div>
+                                    <div class="competitor loser">
+                                        <span class="name">${match.perdente}</span>
+                                        ${showScores ? `<span class="match-score">${loseScore}</span>` : ''}
+                                        <span class="meta">${metaLoser}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        container.appendChild(card);
+                    } else {
+                        const card = document.createElement('div');
+                        card.className = 'match-card-modern';
+                        card.style.cssText = 'opacity: 0.70; filter: grayscale(0.85); border: 1.5px dashed #cbd5e1; background: #f8fafc;';
+                        card.innerHTML = `
+                            <span class="match-date-tab" style="background: #64748b;">⏳ Da disputare</span>
+                            <div class="match-competitors">
+                                <div class="competitor" style="background-color: #ffffff; border-left: 4px solid #cbd5e1;">
+                                    <span class="name">${playerName}</span>
+                                    <span class="meta"><span class="meta-badge" style="background: #e2e8f0; color: #64748b;">In attesa</span></span>
+                                </div>
+                                <div class="competitor" style="background-color: #ffffff; border-left: 4px solid #cbd5e1;">
+                                    <span class="name">${opp}</span>
+                                    <span class="meta"><span class="meta-badge" style="background: #e2e8f0; color: #64748b;">In attesa</span></span>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    }
+                });
+            }
+
+            document.getElementById('player-matches-modal').style.display = 'flex';
+        }
+
+        function chiudiModalGiocatore() {
+            document.getElementById('player-matches-modal').style.display = 'none';
         }
 
         // --- REGISTRAZIONE PARTITA GIRONE ---
