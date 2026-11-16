@@ -889,18 +889,6 @@
             }
         }
     </style>
-    <!-- Icone standard per browser -->
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-
-  <!-- Icona e impostazioni Web App per iPhone / iPad (iOS) -->
-  <link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Tornei">
-
-  <!-- Colore barra superiore su Android -->
-  <meta name="theme-color" content="#012c57">
 </head>
 <body>
 
@@ -2536,125 +2524,135 @@
                 return;
             }
 
-            for (let t = 1; t <= turniPrevisti; t++) {
-                if (turniPrevisti > 1) {
-                    const header = document.createElement('div');
-                    header.style.cssText = 'font-family: var(--font-display); font-weight: 800; font-size: 13px; text-transform: uppercase; color: var(--navy-surface); margin-top: 8px; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-light); padding-bottom: 2px;';
-                    header.textContent = `Turno / Scontro ${t}`;
-                    container.appendChild(header);
+            // SEPARIAMO E ORDINIAMO LE PARTITE
+            let partiteGiocate = [];
+            let partiteDaGiocare = [];
+
+            opponents.forEach(opp => {
+                const matchesBetween = gruppo.partite.filter(m =>
+                    (m.p1 === playerName && m.p2 === opp) || (m.p1 === opp && m.p2 === playerName)
+                );
+                
+                partiteGiocate.push(...matchesBetween);
+
+                const giocateConOpp = matchesBetween.length;
+                for (let i = giocateConOpp; i < turniPrevisti; i++) {
+                    partiteDaGiocare.push(opp); // Salviamo solo il nome dell'avversario per quelle da disputare
                 }
+            });
 
-                opponents.forEach(opp => {
-                    const matchesBetween = gruppo.partite.filter(m => 
-                        (m.p1 === playerName && m.p2 === opp) || (m.p1 === opp && m.p2 === playerName)
-                    );
-                    const match = matchesBetween[t - 1];
+            // Ordina le giocate dalla più recente alla più vecchia (basato sull'ordine di inserimento nel gruppo)
+            partiteGiocate.sort((a, b) => {
+                return gruppo.partite.indexOf(b) - gruppo.partite.indexOf(a);
+            });
 
-                    if (match) {
-                        const isDraw = match.isPareggio || match.vincitore === '__DRAW__';
-                        const hasScores = (match.scoreP1 !== null && match.scoreP1 !== undefined && match.scoreP2 !== null && match.scoreP2 !== undefined);
-                        const showScores = hasPuntiFatti && hasScores;
-                        const dateBadge = match.data ? `<span class="match-date-tab">📅 ${match.data}</span>` : `<span class="match-date-tab">✔ Disputata</span>`;
+            // 1. RENDERIZZA PARTITE GIOCATE
+            partiteGiocate.forEach(match => {
+                const isDraw = match.isPareggio || match.vincitore === '__DRAW__';
+                const hasScores = (match.scoreP1 !== null && match.scoreP1 !== undefined && match.scoreP2 !== null && match.scoreP2 !== undefined);
+                const showScores = hasPuntiFatti && hasScores;
+                const dateBadge = match.data ? `<span class="match-date-tab">📅 ${match.data}</span>` : `<span class="match-date-tab">✔ Disputata</span>`;
 
-                        const card = document.createElement('div');
-                        card.className = 'match-card-modern';
+                const card = document.createElement('div');
+                card.className = 'match-card-modern';
 
-                        if (isDraw) {
-                            let metaP1 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
-                            let metaP2 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
-                            
-                            if (hasAssegnazioneManuale && match.puntiVincitore !== undefined) {
-                                metaP1 += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${match.puntiVincitore} pt Classifica</span>`;
-                                metaP2 += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${match.puntiVincitore} pt Classifica</span>`;
-                            }
-
-                            if (hasPenalita && match.puntiPenalita && match.penalitaGiocatore) {
-                                if (match.penalitaGiocatore === match.p1 || match.penalitaGiocatore === '__BOTH__') {
-                                    metaP1 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt Pen.</span>`;
-                                }
-                                if (match.penalitaGiocatore === match.p2 || match.penalitaGiocatore === '__BOTH__') {
-                                    metaP2 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt Pen.</span>`;
-                                }
-                            }
-
-                            card.innerHTML = `
-                                ${dateBadge}
-                                <div class="match-competitors ${showScores ? 'has-scores' : ''}">
-                                    <div class="competitor" style="background-color: #fffbeb; border-left: 4px solid #f59e0b;">
-                                        <span class="name">🤝 ${match.p1}</span>
-                                        ${showScores ? `<span class="match-score">${match.scoreP1}</span>` : ''}
-                                        <span class="meta">${metaP1}</span>
-                                    </div>
-                                    <div class="competitor" style="background-color: #fffbeb; border-left: 4px solid #f59e0b;">
-                                        <span class="name">🤝 ${match.p2}</span>
-                                        ${showScores ? `<span class="match-score">${match.scoreP2}</span>` : ''}
-                                        <span class="meta">${metaP2}</span>
-                                    </div>
-                                </div>
-                            `;
-                        } else {
-                            const winScore = hasScores ? ((match.vincitore === match.p1) ? match.scoreP1 : match.scoreP2) : null;
-                            const loseScore = hasScores ? ((match.vincitore === match.p1) ? match.scoreP2 : match.scoreP1) : null;
-
-                            let metaWinner = `<span class="meta-badge outcome-win">Vittoria </span>`;
-                            let metaLoser = `<span class="meta-badge outcome-loss">Sconfitta</span>`;
-                            if (hasPuntiRimasti) {
-                                const rimasti = (match.puntiPerdente !== undefined && match.puntiPerdente !== null) ? match.puntiPerdente : 0;
-                                metaLoser += `<span class="meta-badge stat-rimasti">Punti rimasti: <strong>${rimasti}</strong></span>`;
-                            }
-                            
-                            if (hasAssegnazioneManuale && match.puntiVincitore !== undefined && match.puntiPerdenteC !== undefined) {
-                                metaWinner += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${match.puntiVincitore} pt Classifica</span>`;
-                                metaLoser += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${match.puntiPerdenteC} pt Classifica</span>`;
-                            }
-
-                            if (hasPenalita && match.puntiPenalita && match.penalitaGiocatore) {
-                                if (match.penalitaGiocatore === match.vincitore || match.penalitaGiocatore === '__BOTH__') {
-                                    metaWinner += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt Pen.</span>`;
-                                }
-                                if (match.penalitaGiocatore === match.perdente || match.penalitaGiocatore === '__BOTH__') {
-                                    metaLoser += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt Pen.</span>`;
-                                }
-                            }
-
-                            card.innerHTML = `
-                                ${dateBadge}
-                                <div class="match-competitors ${showScores ? 'has-scores' : ''}">
-                                    <div class="competitor winner">
-                                        <span class="name">🏆 ${match.vincitore}</span>
-                                        ${showScores ? `<span class="match-score">${winScore}</span>` : ''}
-                                        <span class="meta">${metaWinner}</span>
-                                    </div>
-                                    <div class="competitor loser">
-                                        <span class="name">${match.perdente}</span>
-                                        ${showScores ? `<span class="match-score">${loseScore}</span>` : ''}
-                                        <span class="meta">${metaLoser}</span>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                        container.appendChild(card);
-                    } else {
-                        const card = document.createElement('div');
-                        card.className = 'match-card-modern';
-                        card.style.cssText = 'opacity: 0.70; filter: grayscale(0.85); border: 1.5px dashed #cbd5e1; background: #f8fafc;';
-                        card.innerHTML = `
-                            <span class="match-date-tab" style="background: #64748b;">⏳ Da disputare</span>
-                            <div class="match-competitors">
-                                <div class="competitor" style="background-color: #ffffff; border-left: 4px solid #cbd5e1;">
-                                    <span class="name">${playerName}</span>
-                                    <span class="meta"><span class="meta-badge" style="background: #e2e8f0; color: #64748b;">In attesa</span></span>
-                                </div>
-                                <div class="competitor" style="background-color: #ffffff; border-left: 4px solid #cbd5e1;">
-                                    <span class="name">${opp}</span>
-                                    <span class="meta"><span class="meta-badge" style="background: #e2e8f0; color: #64748b;">In attesa</span></span>
-                                </div>
-                            </div>
-                        `;
-                        container.appendChild(card);
+                if (isDraw) {
+                    let metaP1 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
+                    let metaP2 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
+                    
+                    if (hasAssegnazioneManuale && match.puntiVincitore !== undefined) {
+                        metaP1 += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${match.puntiVincitore} pt Classifica</span>`;
+                        metaP2 += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${match.puntiVincitore} pt Classifica</span>`;
                     }
-                });
-            }
+
+                    if (hasPenalita && match.puntiPenalita && match.penalitaGiocatore) {
+                        if (match.penalitaGiocatore === match.p1 || match.penalitaGiocatore === '__BOTH__') {
+                            metaP1 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt Pen.</span>`;
+                        }
+                        if (match.penalitaGiocatore === match.p2 || match.penalitaGiocatore === '__BOTH__') {
+                            metaP2 += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt Pen.</span>`;
+                        }
+                    }
+
+                    card.innerHTML = `
+                        ${dateBadge}
+                        <div class="match-competitors ${showScores ? 'has-scores' : ''}">
+                            <div class="competitor" style="background-color: #fffbeb; border-left: 4px solid #f59e0b;">
+                                <span class="name">🤝 ${match.p1}</span>
+                                ${showScores ? `<span class="match-score">${match.scoreP1}</span>` : ''}
+                                <span class="meta">${metaP1}</span>
+                            </div>
+                            <div class="competitor" style="background-color: #fffbeb; border-left: 4px solid #f59e0b;">
+                                <span class="name">🤝 ${match.p2}</span>
+                                ${showScores ? `<span class="match-score">${match.scoreP2}</span>` : ''}
+                                <span class="meta">${metaP2}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const winScore = hasScores ? ((match.vincitore === match.p1) ? match.scoreP1 : match.scoreP2) : null;
+                    const loseScore = hasScores ? ((match.vincitore === match.p1) ? match.scoreP2 : match.scoreP1) : null;
+
+                    let metaWinner = `<span class="meta-badge outcome-win">Vittoria </span>`;
+                    let metaLoser = `<span class="meta-badge outcome-loss">Sconfitta</span>`;
+                    if (hasPuntiRimasti) {
+                        const rimasti = (match.puntiPerdente !== undefined && match.puntiPerdente !== null) ? match.puntiPerdente : 0;
+                        metaLoser += `<span class="meta-badge stat-rimasti">Punti rimasti: <strong>${rimasti}</strong></span>`;
+                    }
+                    
+                    if (hasAssegnazioneManuale && match.puntiVincitore !== undefined && match.puntiPerdenteC !== undefined) {
+                        metaWinner += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${match.puntiVincitore} pt Classifica</span>`;
+                        metaLoser += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${match.puntiPerdenteC} pt Classifica</span>`;
+                    }
+
+                    if (hasPenalita && match.puntiPenalita && match.penalitaGiocatore) {
+                        if (match.penalitaGiocatore === match.vincitore || match.penalitaGiocatore === '__BOTH__') {
+                            metaWinner += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt Pen.</span>`;
+                        }
+                        if (match.penalitaGiocatore === match.perdente || match.penalitaGiocatore === '__BOTH__') {
+                            metaLoser += `<span class="meta-badge" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">-${match.puntiPenalita} pt Pen.</span>`;
+                        }
+                    }
+
+                    card.innerHTML = `
+                        ${dateBadge}
+                        <div class="match-competitors ${showScores ? 'has-scores' : ''}">
+                            <div class="competitor winner">
+                                <span class="name">🏆 ${match.vincitore}</span>
+                                ${showScores ? `<span class="match-score">${winScore}</span>` : ''}
+                                <span class="meta">${metaWinner}</span>
+                            </div>
+                            <div class="competitor loser">
+                                <span class="name">${match.perdente}</span>
+                                ${showScores ? `<span class="match-score">${loseScore}</span>` : ''}
+                                <span class="meta">${metaLoser}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                container.appendChild(card);
+            });
+
+            // 2. RENDERIZZA PARTITE DA GIOCARE
+            partiteDaGiocare.forEach(opp => {
+                const card = document.createElement('div');
+                card.className = 'match-card-modern';
+                card.style.cssText = 'opacity: 0.70; filter: grayscale(0.85); border: 1.5px dashed #cbd5e1; background: #f8fafc; margin-top: 4px;';
+                card.innerHTML = `
+                    <span class="match-date-tab" style="background: #64748b;">⏳ Da disputare</span>
+                    <div class="match-competitors">
+                        <div class="competitor" style="background-color: #ffffff; border-left: 4px solid #cbd5e1;">
+                            <span class="name">${playerName}</span>
+                            <span class="meta"><span class="meta-badge" style="background: #e2e8f0; color: #64748b;">In attesa</span></span>
+                        </div>
+                        <div class="competitor" style="background-color: #ffffff; border-left: 4px solid #cbd5e1;">
+                            <span class="name">${opp}</span>
+                            <span class="meta"><span class="meta-badge" style="background: #e2e8f0; color: #64748b;">In attesa</span></span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
 
             document.getElementById('player-matches-modal').style.display = 'flex';
         }
