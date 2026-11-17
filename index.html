@@ -736,6 +736,96 @@
             color: #64748b;
             border-color: #e2e8f0;
         }
+
+        /* Evidenziazione giocatore selezionato (solo nel pop-up) e barra filtri */
+        #player-matches-modal .competitor.selected-win {
+            background-color: #ecfdf5;
+            border-color: #d1fae5;
+            border-left: 4px solid var(--secondary);
+        }
+        #player-matches-modal .competitor.selected-win .name {
+            color: #047857;
+            font-weight: 700;
+        }
+        #player-matches-modal .competitor.selected-win .match-score {
+            color: #047857;
+            border-color: #a7f3d0;
+            background: #f0fdf4;
+        }
+        #player-matches-modal .competitor.selected-loss {
+            background-color: #fef2f2;
+            border-color: #fecaca;
+            border-left: 4px solid var(--danger);
+        }
+        #player-matches-modal .competitor.selected-loss .name {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+        #player-matches-modal .competitor.selected-loss .match-score {
+            color: #b91c1c;
+            border-color: #fecaca;
+            background: #fff5f5;
+        }
+        #player-matches-modal .competitor.selected-loss .meta-badge.outcome-loss {
+            background-color: #dc2626;
+            color: #ffffff;
+        }
+        
+        /* Bar e Button Filtri Principali */
+        .player-filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .player-filter-btn {
+            flex: 1;
+            padding: 7px 10px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 6px;
+            background: #f8fafc;
+            color: #475569;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .player-filter-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #ffffff;
+        }
+        .player-filter-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 2px 5px rgba(29, 78, 216, 0.25);
+        }
+
+        /* Bar e Select Sottofiltri */
+        .player-subfilter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .subfilter-select {
+            flex: 1;
+            padding: 6px 10px;
+            font-family: var(--font-body);
+            font-size: 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #ffffff;
+            color: #334155;
+            outline: none;
+            cursor: pointer;
+        }
+        .subfilter-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+        }
         
         .competitor .meta {
             display: flex;
@@ -886,6 +976,10 @@
             }
             .girone-card {
                 padding: 14px 12px;
+            }
+            .player-subfilter-bar {
+                flex-direction: column;
+                gap: 5px;
             }
         }
     </style>
@@ -1195,6 +1289,25 @@
                 </div>
                 <button class="action-icon-btn" onclick="chiudiModalGiocatore()" style="font-size: 18px; color: var(--text-muted);">✖</button>
             </div>
+            <div class="player-filter-bar">
+                <button type="button" class="player-filter-btn active" data-filter="all" onclick="impostaFiltroPartiteGiocatore('all')">Tutte</button>
+                <button type="button" class="player-filter-btn" data-filter="da_giocare" onclick="impostaFiltroPartiteGiocatore('da_giocare')">Da giocare</button>
+                <button type="button" class="player-filter-btn" data-filter="giocate" onclick="impostaFiltroPartiteGiocatore('giocate')">Giocate</button>
+            </div>
+            <div class="player-subfilter-bar">
+                <select id="subfilter-turno" class="subfilter-select" onchange="impostaSottofiltriPartite()">
+                    <option value="all">Tutti i turni</option>
+                </select>
+                <select id="subfilter-esito" class="subfilter-select" onchange="impostaSottofiltriPartite()">
+                    <option value="all">Tutti gli esiti</option>
+                    <option value="win">Vittorie</option>
+                    <option value="draw">Pareggi</option>
+                    <option value="loss">Sconfitte</option>
+                </select>
+                <select id="subfilter-avversario" class="subfilter-select" onchange="impostaSottofiltriPartite()">
+                    <option value="all">Tutti gli avv.</option>
+                </select>
+            </div>
             <div id="player-modal-matches-list" style="overflow-y: auto; max-height: 60vh; padding-right: 5px; display: flex; flex-direction: column; gap: 12px;"></div>
             <div style="margin-top: 16px;">
                 <button class="modal-btn modal-btn-cancel" style="width: 100%;" onclick="chiudiModalGiocatore()">Chiudi</button>
@@ -1281,6 +1394,9 @@
         let draggedFromGroupIndex = null;
         let numeroQualificatiSelezionato = 4;
         let slotTarget = null;
+        let playerModalGironeIdx = null;
+        let playerModalName = null;
+        let playerModalFilter = 'all';
 
         // --- INIZIALIZZAZIONE ---
         window.addEventListener('DOMContentLoaded', () => {
@@ -2501,6 +2617,49 @@
 
         // --- SCHEDA INCONTRI GIOCATORE GIRONE (POP-UP SCORREVOLE) ---
         function apriModalSchedaGiocatore(gIdx, playerName) {
+            playerModalGironeIdx = gIdx;
+            playerModalName = playerName;
+            
+            const torneo = getTornei()[idTorneoAttuale];
+            if (!torneo || !torneo.gironiData || !torneo.gironiData.gruppi[gIdx]) return;
+            const gruppo = torneo.gironiData.gruppi[gIdx];
+            const turniPrevisti = torneo.gironiData.turniGirone || torneo.turniGirone || 1;
+            const opponents = gruppo.partecipanti.filter(p => p !== playerName);
+
+            // Popola i sotto-filtri dinamici
+            const selectTurno = document.getElementById('subfilter-turno');
+            selectTurno.innerHTML = '<option value="all">Tutti i turni</option>';
+            for(let i = 1; i <= turniPrevisti; i++) {
+                selectTurno.innerHTML += `<option value="${i}">Turno ${i}</option>`;
+            }
+
+            const selectAvv = document.getElementById('subfilter-avversario');
+            selectAvv.innerHTML = '<option value="all">Tutti gli avv.</option>';
+            opponents.forEach(opp => {
+                selectAvv.innerHTML += `<option value="${opp}">${opp}</option>`;
+            });
+
+            document.getElementById('subfilter-esito').value = 'all';
+
+            impostaFiltroPartiteGiocatore('all');
+            document.getElementById('player-matches-modal').style.display = 'flex';
+        }
+
+        function impostaSottofiltriPartite() {
+            renderizzaListaPartiteGiocatore();
+        }
+
+        function impostaFiltroPartiteGiocatore(filtro) {
+            playerModalFilter = filtro;
+            document.querySelectorAll('#player-matches-modal .player-filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === filtro);
+            });
+            renderizzaListaPartiteGiocatore();
+        }
+
+        function renderizzaListaPartiteGiocatore() {
+            const gIdx = playerModalGironeIdx;
+            const playerName = playerModalName;
             const torneo = getTornei()[idTorneoAttuale];
             if (!torneo || !torneo.gironiData || !torneo.gironiData.gruppi[gIdx]) return;
             const gruppo = torneo.gironiData.gruppi[gIdx];
@@ -2511,6 +2670,10 @@
             const container = document.getElementById('player-modal-matches-list');
             container.innerHTML = '';
 
+            const filterTurno = document.getElementById('subfilter-turno').value;
+            const filterEsito = document.getElementById('subfilter-esito').value;
+            const filterAvv = document.getElementById('subfilter-avversario').value;
+
             const turniPrevisti = torneo.gironiData.turniGirone || torneo.turniGirone || 1;
             const opponents = gruppo.partecipanti.filter(p => p !== playerName);
             const hasPuntiFatti = Boolean(torneo.segnaPuntiFatti);
@@ -2520,21 +2683,20 @@
 
             if (opponents.length === 0) {
                 container.innerHTML = '<p style="color:var(--text-muted); font-size:13px; font-style:italic;">Nessun altro partecipante nel girone.</p>';
-                document.getElementById('player-matches-modal').style.display = 'flex';
                 return;
             }
 
+            let partiteMostrateTotali = 0;
+
             for (let t = 1; t <= turniPrevisti; t++) {
-                // BANNER TURNO
-                const header = document.createElement('div');
-                header.style.cssText = 'font-family: var(--font-display); font-weight: 800; font-size: 15px; text-transform: uppercase; color: var(--navy-surface); margin-top: 14px; margin-bottom: 2px; letter-spacing: 0.05em; border-bottom: 2px solid var(--border-light); padding-bottom: 4px;';
-                header.textContent = `TURNO ${t}`;
-                container.appendChild(header);
+                if (filterTurno !== 'all' && t !== parseInt(filterTurno)) continue;
 
                 let giocateQuestoTurno = [];
                 let daGiocareQuestoTurno = [];
 
                 opponents.forEach(opp => {
+                    if (filterAvv !== 'all' && opp !== filterAvv) return;
+
                     const matchesBetween = gruppo.partite.filter(m =>
                         (m.p1 === playerName && m.p2 === opp) || (m.p1 === opp && m.p2 === playerName)
                     );
@@ -2546,11 +2708,62 @@
                     }
                 });
 
+                // Le partite non ancora disputate non hanno un esito
+                if (filterEsito !== 'all') {
+                    daGiocareQuestoTurno = [];
+                }
+
+                if (filterEsito !== 'all') {
+                    giocateQuestoTurno = giocateQuestoTurno.filter(match => {
+                        const isDraw = match.isPareggio || match.vincitore === '__DRAW__';
+                        if (filterEsito === 'draw') return isDraw;
+                        if (filterEsito === 'win') return !isDraw && match.vincitore === playerName;
+                        if (filterEsito === 'loss') return !isDraw && match.perdente === playerName;
+                        return true;
+                    });
+                }
+
                 // Ordina le giocate dalla più recente alla più vecchia all'interno del turno
                 giocateQuestoTurno.sort((a, b) => gruppo.partite.indexOf(b) - gruppo.partite.indexOf(a));
 
-                // 1. RENDERIZZA PARTITE GIOCATE
-                giocateQuestoTurno.forEach(match => {
+                const mostraDaGiocare = (playerModalFilter === 'all' || playerModalFilter === 'da_giocare') ? daGiocareQuestoTurno : [];
+                const mostraGiocate = (playerModalFilter === 'all' || playerModalFilter === 'giocate') ? giocateQuestoTurno : [];
+
+                if (mostraDaGiocare.length === 0 && mostraGiocate.length === 0) {
+                    continue;
+                }
+
+                // BANNER TURNO
+                const header = document.createElement('div');
+                header.style.cssText = 'font-family: var(--font-display); font-weight: 800; font-size: 15px; text-transform: uppercase; color: var(--navy-surface); margin-top: 14px; margin-bottom: 2px; letter-spacing: 0.05em; border-bottom: 2px solid var(--border-light); padding-bottom: 4px;';
+                header.textContent = `TURNO ${t}`;
+                container.appendChild(header);
+
+                // 1. RENDERIZZA PRIMA LE PARTITE DA GIOCARE
+                mostraDaGiocare.forEach(opp => {
+                    partiteMostrateTotali++;
+                    const card = document.createElement('div');
+                    card.className = 'match-card-modern';
+                    card.style.cssText = 'opacity: 0.70; filter: grayscale(0.85); border: 1.5px dashed #cbd5e1; background: #f8fafc; margin-top: 4px;';
+                    card.innerHTML = `
+                        <span class="match-date-tab" style="background: #64748b;">⏳ Da disputare</span>
+                        <div class="match-competitors">
+                            <div class="competitor" style="background-color: #ffffff; border-left: 4px solid #cbd5e1;">
+                                <span class="name">${playerName}</span>
+                                <span class="meta"><span class="meta-badge" style="background: #e2e8f0; color: #64748b;">In attesa</span></span>
+                            </div>
+                            <div class="competitor" style="background-color: #ffffff; border-left: 4px solid #cbd5e1;">
+                                <span class="name">${opp}</span>
+                                <span class="meta"><span class="meta-badge" style="background: #e2e8f0; color: #64748b;">In attesa</span></span>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+                // 2. RENDERIZZA POI LE PARTITE GIOCATE (evidenziando solo il giocatore selezionato)
+                mostraGiocate.forEach(match => {
+                    partiteMostrateTotali++;
                     const isDraw = match.isPareggio || match.vincitore === '__DRAW__';
                     const hasScores = (match.scoreP1 !== null && match.scoreP1 !== undefined && match.scoreP2 !== null && match.scoreP2 !== undefined);
                     const showScores = hasPuntiFatti && hasScores;
@@ -2560,8 +2773,11 @@
                     card.className = 'match-card-modern';
 
                     if (isDraw) {
-                        let metaP1 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
-                        let metaP2 = `<span class="meta-badge outcome-draw">Pareggio</span>`;
+                        const isP1Selected = (match.p1 === playerName);
+                        const isP2Selected = (match.p2 === playerName);
+
+                        let metaP1 = `<span class="meta-badge ${isP1Selected ? 'outcome-draw' : 'outcome-loss'}">Pareggio</span>`;
+                        let metaP2 = `<span class="meta-badge ${isP2Selected ? 'outcome-draw' : 'outcome-loss'}">Pareggio</span>`;
                         
                         if (hasAssegnazioneManuale && match.puntiVincitore !== undefined) {
                             metaP1 += `<span class="meta-badge" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">+${match.puntiVincitore} pt Classifica</span>`;
@@ -2577,15 +2793,18 @@
                             }
                         }
 
+                        const styleP1 = isP1Selected ? 'background-color: #fffbeb; border-left: 4px solid #f59e0b;' : 'border-left: 4px solid #cbd5e1;';
+                        const styleP2 = isP2Selected ? 'background-color: #fffbeb; border-left: 4px solid #f59e0b;' : 'border-left: 4px solid #cbd5e1;';
+
                         card.innerHTML = `
                             ${dateBadge}
                             <div class="match-competitors ${showScores ? 'has-scores' : ''}">
-                                <div class="competitor" style="background-color: #fffbeb; border-left: 4px solid #f59e0b;">
+                                <div class="competitor" style="${styleP1}">
                                     <span class="name">🤝 ${match.p1}</span>
                                     ${showScores ? `<span class="match-score">${match.scoreP1}</span>` : ''}
                                     <span class="meta">${metaP1}</span>
                                 </div>
-                                <div class="competitor" style="background-color: #fffbeb; border-left: 4px solid #f59e0b;">
+                                <div class="competitor" style="${styleP2}">
                                     <span class="name">🤝 ${match.p2}</span>
                                     ${showScores ? `<span class="match-score">${match.scoreP2}</span>` : ''}
                                     <span class="meta">${metaP2}</span>
@@ -2595,8 +2814,9 @@
                     } else {
                         const winScore = hasScores ? ((match.vincitore === match.p1) ? match.scoreP1 : match.scoreP2) : null;
                         const loseScore = hasScores ? ((match.vincitore === match.p1) ? match.scoreP2 : match.scoreP1) : null;
+                        const didSelectedWin = (match.vincitore === playerName);
 
-                        let metaWinner = `<span class="meta-badge outcome-win">Vittoria </span>`;
+                        let metaWinner = `<span class="meta-badge ${didSelectedWin ? 'outcome-win' : 'outcome-loss'}">Vittoria </span>`;
                         let metaLoser = `<span class="meta-badge outcome-loss">Sconfitta</span>`;
                         if (hasPuntiRimasti) {
                             const rimasti = (match.puntiPerdente !== undefined && match.puntiPerdente !== null) ? match.puntiPerdente : 0;
@@ -2617,15 +2837,20 @@
                             }
                         }
 
+                        const winnerClass = didSelectedWin ? 'competitor selected-win' : 'competitor';
+                        const loserClass = !didSelectedWin ? 'competitor selected-loss' : 'competitor';
+                        const winnerInlineStyle = didSelectedWin ? '' : 'style="border-left: 4px solid #cbd5e1;"';
+                        const loserInlineStyle = !didSelectedWin ? '' : 'style="border-left: 4px solid #cbd5e1;"';
+
                         card.innerHTML = `
                             ${dateBadge}
                             <div class="match-competitors ${showScores ? 'has-scores' : ''}">
-                                <div class="competitor winner">
+                                <div class="${winnerClass}" ${winnerInlineStyle}>
                                     <span class="name">🏆 ${match.vincitore}</span>
                                     ${showScores ? `<span class="match-score">${winScore}</span>` : ''}
                                     <span class="meta">${metaWinner}</span>
                                 </div>
-                                <div class="competitor loser">
+                                <div class="${loserClass}" ${loserInlineStyle}>
                                     <span class="name">${match.perdente}</span>
                                     ${showScores ? `<span class="match-score">${loseScore}</span>` : ''}
                                     <span class="meta">${metaLoser}</span>
@@ -2635,30 +2860,22 @@
                     }
                     container.appendChild(card);
                 });
-
-                // 2. RENDERIZZA PARTITE DA GIOCARE
-                daGiocareQuestoTurno.forEach(opp => {
-                    const card = document.createElement('div');
-                    card.className = 'match-card-modern';
-                    card.style.cssText = 'opacity: 0.70; filter: grayscale(0.85); border: 1.5px dashed #cbd5e1; background: #f8fafc; margin-top: 4px;';
-                    card.innerHTML = `
-                        <span class="match-date-tab" style="background: #64748b;">⏳ Da disputare</span>
-                        <div class="match-competitors">
-                            <div class="competitor" style="background-color: #ffffff; border-left: 4px solid #cbd5e1;">
-                                <span class="name">${playerName}</span>
-                                <span class="meta"><span class="meta-badge" style="background: #e2e8f0; color: #64748b;">In attesa</span></span>
-                            </div>
-                            <div class="competitor" style="background-color: #ffffff; border-left: 4px solid #cbd5e1;">
-                                <span class="name">${opp}</span>
-                                <span class="meta"><span class="meta-badge" style="background: #e2e8f0; color: #64748b;">In attesa</span></span>
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
             }
 
-            document.getElementById('player-matches-modal').style.display = 'flex';
+            if (partiteMostrateTotali === 0) {
+                const isFiltered = (filterTurno !== 'all' || filterEsito !== 'all' || filterAvv !== 'all');
+                let msgVuoto = 'Nessun incontro trovato.';
+                
+                if (isFiltered) {
+                    msgVuoto = 'Nessun incontro corrisponde ai filtri selezionati.';
+                } else if (playerModalFilter === 'da_giocare') {
+                    msgVuoto = 'Nessuna partita da giocare.';
+                } else if (playerModalFilter === 'giocate') {
+                    msgVuoto = 'Nessuna partita ancora disputata.';
+                }
+
+                container.innerHTML = `<p style="color:var(--text-muted); font-size:13px; font-style:italic; text-align:center; margin: 16px 0;">${msgVuoto}</p>`;
+            }
         }
 
         function chiudiModalGiocatore() {
